@@ -52,14 +52,6 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
       swap(matA[j], matA[pivot_index]);
       swap(matB[j], matB[pivot_index]);
     }
-    // current row is also j
-    // divide the pivot
-    for (size_t i = j; i < N; ++i) {
-      matA[j][i] /= pivot;
-    }
-    for (size_t i = 0; i < M; ++i) {
-      matB[j][i] /= pivot;
-    }
 #ifdef DEBUG
     std::cout << "Col: " << j << "\n";
     std::cout << "A:\n";
@@ -69,7 +61,7 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
 #endif
     // subtract the successive rows from the current row
     for (size_t k = j + 1; k < N; ++k) {
-      const double factor = matA[k][j];
+      const double factor = matA[k][j] / pivot;
       for (size_t i = j; i < N; ++i) {
         matA[k][i] = matA[k][i] - matA[j][i] * factor;
       }
@@ -85,7 +77,7 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
     for (int j = N - 1; j >= 0; --j) {
       for (size_t i = 0; i < M; ++i) {
         if (j == N - 1) {
-          matX[j][i] = matB[j][i];
+          matX[j][i] = matB[j][i] / matA[j][j];
         }/* else if (j == N - 2) {
           matX[j][i] = matB[j][i] - matX[j+1][i] * matA[j][j+1];
         } else if (j == N - 3) {
@@ -97,7 +89,7 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
           for (int k = 1; k < N - j; ++k) {
             sum += matX[j+k][i] * matA[j][j+k];
           }
-          matX[j][i] = matB[j][i] - sum;
+          matX[j][i] = (matB[j][i] - sum) / matA[j][j];
         }
       }
     }
