@@ -28,13 +28,6 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
   const size_t M = matB[0].size();
   // iterate over columns
   for (size_t j = 0; j < N; ++j) {
-#ifdef DEBUG
-    std::cout << "Col: " << j << "\n";
-    std::cout << "A:\n";
-    PrintMatrix(matA);
-    std::cout << "B:\n";
-    PrintMatrix(matB);
-#endif
     // iterate over rows and find the pivot
     double pivot = matA[j][j];
     size_t pivot_index = j;
@@ -52,13 +45,6 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
       swap(matA[j], matA[pivot_index]);
       swap(matB[j], matB[pivot_index]);
     }
-#ifdef DEBUG
-    std::cout << "Col: " << j << "\n";
-    std::cout << "A:\n";
-    PrintMatrix(matA);
-    std::cout << "B:\n";
-    PrintMatrix(matB);
-#endif
     // subtract the successive rows from the current row
     for (size_t k = j + 1; k < N; ++k) {
       const double factor = matA[k][j] / pivot;
@@ -78,13 +64,7 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
       for (size_t i = 0; i < M; ++i) {
         if (j == N - 1) {
           matX[j][i] = matB[j][i] / matA[j][j];
-        }/* else if (j == N - 2) {
-          matX[j][i] = matB[j][i] - matX[j+1][i] * matA[j][j+1];
-        } else if (j == N - 3) {
-          matX[j][i] = matB[j][i] - matX[j+1][i] * matA[j][j+1] - matX[j+2][i] * matA[j][j+2];
-        } else if (j == N - 4) {
-          matX[j][i] = matB[j][i] - matX[j+1][i] * matA[j][j+1] - matX[j+2][i] * matA[j][j+2] - matX[j+3][i] * matA[j][j+3];
-        }*/ else {
+        } else {
           double sum = 0.0;
           for (int k = 1; k < N - j; ++k) {
             sum += matX[j+k][i] * matA[j][j+k];
