@@ -42,6 +42,8 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
     // current row is also j
     // swap row j and row pivot_index
     if (j != pivot_index) {
+      // TODO: do not actually swap the rows,
+      //       record the indices instead.
       swap(matA[j], matA[pivot_index]);
       swap(matB[j], matB[pivot_index]);
     }
@@ -56,7 +58,7 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
       }
     }
   }
-  // solve X
+  // solve X, backsubstitution
   vector<vector<double>> matX(N, vector<double>(M));
   // boundary check
   if (N > 0) {
