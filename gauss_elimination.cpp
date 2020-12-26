@@ -44,6 +44,8 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
         pivot_index = k;
       }
     }
+    // check if the pivot is zero
+    if (pivot == 0.0) continue;
     // current row is also j
     // swap row j and row pivot_index
     if (j != pivot_index) {
