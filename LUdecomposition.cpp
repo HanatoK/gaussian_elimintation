@@ -17,7 +17,7 @@ matA(A), P(matA.size() + 1) {
   //       need taking more time to figure out what it is.
   // number of rows or columns
   const size_t N = matA.size();
-  for (size_t i = 0; i < N; ++i) P[i] = i;
+  for (size_t i = 0; i <= N; ++i) P[i] = i;
   for (size_t i = 0; i < N; ++i) {
     // find the pivot
     double maxA = 0.0;
