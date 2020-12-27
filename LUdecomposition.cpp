@@ -4,6 +4,8 @@
 #include "common.h"
 
 struct LUdecomposition {
+  std::vector<std::vector<double>> matL;
+  std::vector<std::vector<double>> matU;
   std::vector<std::vector<double>> matA;
   std::vector<size_t> P;
   const double tol = 1e-12;
@@ -11,36 +13,25 @@ struct LUdecomposition {
 };
 
 LUdecomposition::LUdecomposition(const std::vector<std::vector<double>>& A):
-matA(A), P(matA.size() + 1) {
-  // modified from wikipedia
-  // TODO: it seems it is not the LU decomposition I have known,
-  //       need taking more time to figure out what it is.
-  // number of rows or columns
-  const size_t N = matA.size();
-  for (size_t i = 0; i <= N; ++i) P[i] = i;
-  for (size_t i = 0; i < N; ++i) {
-    // find the pivot
-    double maxA = 0.0;
-    size_t imax = i;
-    for (size_t k = i; k < N; ++k) {
-      double absA = std::abs(matA[k][i]);
-      if (maxA < absA) {
-        maxA = absA;
-        imax = k;
+matL(A.size(), std::vector<double>(A.size(), 0.0)), matU(matL), matA(A) {
+  const int N = matA.size();
+  for (size_t i = 0; i < N; ++i) matL[i][i] = 1;
+  for (size_t j = 0; j < N; ++j) {
+    for (size_t i = 0; i < j + 1; ++i) {
+      double sum = 0.0;
+      if (i > 0) {
+        for (size_t k = 0; k < i; ++k) {
+          sum += matL[i][k] * matU[k][j];
+        }
       }
+      matU[i][j] = matA[i][j] - sum;
     }
-    if (maxA < tol) return;
-    if (imax != i) {
-      // pivoting P
-      std::swap(P[i], P[imax]);
-      // pivoting rows of A
-      std::swap(matA[i], matA[imax]);
-    }
-    for (size_t j = i + 1; j < N; ++j) {
-      matA[j][i] /= matA[i][i];
-      for (size_t k = i + 1; k < N; ++k) {
-        matA[j][k] -= matA[j][i] * matA[i][k];
+    for (size_t i = j + 1; i < N; ++i) {
+      double sum = 0.0;
+      for (size_t k = 0; k < j; ++k) {
+        sum += matL[i][k] * matU[k][j];
       }
+      matL[i][j] = (matA[i][j] - sum) / matU[j][j];
     }
   }
 }
@@ -48,8 +39,12 @@ matA(A), P(matA.size() + 1) {
 int main() {
   std::vector<std::vector<double>> A = {{1,2,4},
                                         {3,8,14},
-                                        {2,6,13}};
+                                        {2,6,1}};
   LUdecomposition d(A);
-  std::cout << "LU:\n";
-  PrintMatrix(d.matA);
+  std::cout << "A:\n";
+  PrintMatrix(A);
+  std::cout << "L:\n";
+  PrintMatrix(d.matL);
+  std::cout << "U:\n";
+  PrintMatrix(d.matU);
 }
