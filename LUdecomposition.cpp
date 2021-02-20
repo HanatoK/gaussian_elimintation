@@ -38,7 +38,7 @@ matL(A.size(), std::vector<double>(A.size(), 0.0)), matU(matL), matA(A), P(A.siz
   }
 #else
   // copy from NR
-  // TODO: figure out what happens
+  // TODO: figure out what happens, actually this is LUP
   double big = 0.0;
   size_t imax = 0;
   double d = 1.0;
@@ -57,6 +57,7 @@ matL(A.size(), std::vector<double>(A.size(), 0.0)), matU(matL), matA(A), P(A.siz
     scaling[i] = 1.0 / big;
   }
   for (size_t k = 0; k < N; ++k) {
+    big = 0.0;
     for (size_t i = k; i < N; ++i) {
       tmp = scaling[i] * std::abs(lu[i][k]);
       if (tmp > big) {
@@ -72,7 +73,6 @@ matL(A.size(), std::vector<double>(A.size(), 0.0)), matU(matL), matA(A), P(A.siz
     }
     P[k] = imax;
     for (size_t i = k + 1; i < N; ++i) {
-      // TODO
       tmp = lu[i][k] /= lu[k][k];
       for (size_t j = k + 1; j < N; ++j) {
         lu[i][j] -= tmp * lu[k][j];
