@@ -19,12 +19,15 @@ vector<vector<double>> GaussianElimination(vector<vector<double>>& matA, vector<
   const size_t M = matB[0].size();
   // iterate over columns
   for (size_t j = 0; j < N; ++j) {
-    // iterate over rows and find the pivot
+    // assume A[j][j] is the current pivot
     double pivot = matA[j][j];
     size_t pivot_index = j;
     for (size_t k = j; k < N; ++k) {
+      // iterate from j to the end of current column
       if (abs(matA[k][j]) > abs(pivot)) {
+        // find the pivot as the one has the maximum absolute value
         pivot = matA[k][j];
+        // bookkeep the index of the pivot
         pivot_index = k;
       }
     }
