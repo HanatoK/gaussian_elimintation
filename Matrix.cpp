@@ -62,12 +62,15 @@ Matrix Matrix::Identity(size_t N) {
   return result;
 }
 
-void Matrix::transpose() {
+Matrix Matrix::transpose() const {
+  Matrix result(this->numColumns(), this->numRows());
   for (size_t i = 0; i < numRows(); ++i) {
-    for (size_t j = i + 1; j < numColumns(); ++j) {
-      std::swap((*this)(i, j), (*this)(j, i));
+    for (size_t j = 0; j < numColumns(); ++j) {
+//       std::swap((*this)(i, j), (*this)(j, i));
+      result(j, i) = (*this)(i, j);
     }
   }
+  return result;
 }
 
 void Matrix::swapRows(size_t i, size_t j) {
@@ -102,7 +105,7 @@ Matrix& Matrix::operator-=(const Matrix& rhs) {
   return *this;
 }
 
-Matrix Matrix::operator*(const Matrix& rhs) {
+Matrix Matrix::operator*(const Matrix& rhs) const {
   if (this->numColumns() != rhs.numRows()) {
     throw std::invalid_argument(
       "The number of columns of the left-hand-side matrix does not match the "
@@ -279,7 +282,7 @@ void Matrix::JacobiSweep(Matrix& matA, Matrix& matP) {
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
   // assume matA is always a square matrix
   const size_t N = matA.numRows();
-  if (N != matA.numColumns()) {
+  if (!matA.isSquare()) {
     throw std::invalid_argument("Gaussian elimination is only implemented for square matrices.");
   }
   // B has M columns
@@ -357,4 +360,31 @@ Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
     }
   }
   return matX;
+}
+
+Matrix CholeskyDecomposition(Matrix& matA) {
+  if (!matA.isSquare()) {
+    throw std::invalid_argument("Cholesky decomposition is only implemented for square matrices.");
+  }
+  Matrix matL(matA.numRows(), matA.numColumns());
+  // loop over columns
+  for (size_t j = 0; j < matL.numColumns(); ++j) {
+    for (size_t i = j; i < matL.numRows(); ++i) {
+      double sum = 0.0;
+      for (size_t k = 0; k < i; ++k) {
+        sum += matL(i, k) * matL(j, k);
+      }
+      if (i == j) {
+        const double l_ii = matA(i, i) - sum;
+        if (l_ii < 0) {
+          throw std::invalid_argument("The input matrix is not positive-definite.");
+        }
+        matL(i, i) = std::sqrt(l_ii);
+      } else {
+        // i > j
+        matL(i, j) = 1.0 / matL(j, j) * (matA(j, i) - sum);
+      }
+    }
+  }
+  return matL;
 }

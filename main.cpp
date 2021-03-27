@@ -35,6 +35,17 @@ void testLU(const Matrix& matA) {
   std::cout << "L*U:\n" << std::get<0>(lu)*std::get<1>(lu);
 }
 
+void testCholesky() {
+  Matrix matA{{ 1.896457,  0.213800,  0.619222,  1.288015},
+              { 0.213800,  0.039964,  0.080064,  0.142678},
+              { 0.619222,  0.080064,  0.409956,  0.239832},
+              { 1.288015,  0.142678,  0.239832,  1.125348}};
+  const Matrix L = CholeskyDecomposition(matA);
+  std::cout << "Matrix A:\n" << matA;
+  std::cout << "Matrix L:\n" << L;
+  std::cout << "L*L':\n" << L * L.transpose();
+}
+
 int main() {
   Matrix matA{{ 2.0,  0.5,  1.0, -2.0,  3.0},
               { 0.5,  1.0,  0.1,  4.0, -9.0},
@@ -50,5 +61,6 @@ int main() {
   testLinearSolver(matA, matB);
   testDeterminant(matA);
   testLU(matA);
+  testCholesky();
   return 0;
 }

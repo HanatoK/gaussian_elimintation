@@ -22,11 +22,11 @@ public:
   ostream& print(ostream& os = std::cout) const;
   static Matrix Identity(size_t N);
   // Matrix operations
-  void transpose();
+  Matrix transpose() const;
   void swapRows(size_t i, size_t j);
   Matrix& operator+=(const Matrix& rhs);
   Matrix& operator-=(const Matrix& rhs);
-  Matrix operator*(const Matrix& rhs);
+  Matrix operator*(const Matrix& rhs) const;
   double diagonalSquaredSum() const;
   Matrix minor(size_t m, size_t n) const;
   // slow, not optimal
@@ -60,3 +60,7 @@ ostream& operator<<(ostream& os, const Matrix& A);
 
 // solve AX=B by Gaussian elimination
 Matrix GaussianElimination(Matrix& matA, Matrix& matB);
+
+// Cholesky decomposition
+// matA = LL', return L
+Matrix CholeskyDecomposition(Matrix& matA);
