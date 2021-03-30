@@ -63,4 +63,12 @@ Matrix GaussianElimination(Matrix& matA, Matrix& matB);
 
 // Cholesky decomposition
 // matA = LL', return L
-Matrix CholeskyDecomposition(Matrix& matA);
+Matrix CholeskyDecomposition(const Matrix& matA);
+
+// Gram-Schmidt process
+tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA);
+
+// helper function of projecting col i in A to col j in B
+tuple<double, vector<double>>
+projectColumnVectors(const Matrix& matA, size_t col_i,
+                     const Matrix& matB, size_t col_j);

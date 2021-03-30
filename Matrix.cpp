@@ -362,7 +362,7 @@ Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
   return matX;
 }
 
-Matrix CholeskyDecomposition(Matrix& matA) {
+Matrix CholeskyDecomposition(const Matrix& matA) {
   if (!matA.isSquare()) {
     throw std::invalid_argument("Cholesky decomposition is only implemented for square matrices.");
   }
@@ -387,4 +387,55 @@ Matrix CholeskyDecomposition(Matrix& matA) {
     }
   }
   return matL;
+}
+
+tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
+  if (!matA.isSquare()) {
+    throw std::invalid_argument("Gram-Schmidt process is only implemented for square matrices.");
+  }
+  Matrix Q(matA.numRows(), matA.numColumns());
+  Matrix R(matA.numRows(), matA.numColumns());
+//   std::vector<double> proj(matA.numRows(), 0);
+  for (size_t j = 0; j < matA.numColumns(); ++j) {
+    // sum of projection
+    // need further optimization
+    std::vector<double> proj_sum(matA.numRows(), 0);
+    for (size_t k = 0; k < j; ++k) {
+      const auto proj = projectColumnVectors(matA, j, Q, k);
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        proj_sum[i] += std::get<1>(proj)[i];
+      }
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        Q(i, j) = matA(i, j) - proj_sum[i];
+      }
+      R(k, j) = std::get<0>(proj);
+    }
+    if (j == 0) {
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        Q(i, j) = matA(i, j);
+      }
+    }
+    R(j, j) = 1.0;
+  }
+  return std::make_tuple(Q, R);
+}
+
+tuple<double, vector<double>>
+projectColumnVectors(const Matrix& matA, size_t col_i,
+                     const Matrix& matB, size_t col_j) {
+  if (matA.numRows() != matB.numRows()) {
+    throw std::invalid_argument("Matrices A and B have different number of columns.");
+  }
+  std::vector<double> proj(matA.numRows(), 0);
+  double numerator = 0;
+  double denominator = 0;
+  for (size_t i = 0; i < matA.numRows(); ++i) {
+    numerator += matA(i, col_i) * matB(i, col_j);
+    denominator += matB(i, col_j) * matB(i, col_j);
+  }
+  const double factor = numerator / denominator;
+  for (size_t i = 0; i < matA.numRows(); ++i) {
+    proj[i] = factor * matB(i, col_j);
+  }
+  return std::make_tuple(factor, proj);
 }
