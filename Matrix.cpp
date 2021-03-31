@@ -398,7 +398,6 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
 //   std::vector<double> proj(matA.numRows(), 0);
   for (size_t j = 0; j < matA.numColumns(); ++j) {
     // sum of projection
-    // need further optimization
     std::vector<double> proj_sum(matA.numRows(), 0);
     for (size_t k = 0; k < j; ++k) {
       double numerator = 0;
@@ -412,15 +411,17 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
       for (size_t i = 0; i < matA.numRows(); ++i) {
         proj_sum[i] += Q(i, k) * R(k, j);
       }
-      for (size_t i = 0; i < matA.numRows(); ++i) {
-        Q(i, j) = matA(i, j) - proj_sum[i];
-      }
     }
     if (j == 0) {
       for (size_t i = 0; i < matA.numRows(); ++i) {
         Q(i, j) = matA(i, j);
       }
+    } else {
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        Q(i, j) = matA(i, j) - proj_sum[i];
+      }
     }
+    // normalization
     for (size_t i = 0; i < matA.numRows(); ++i) {
       R(j, j) += Q(i, j) * Q(i, j);
     }
