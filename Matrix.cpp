@@ -47,7 +47,7 @@ size_t Matrix::numColumns() const {
 ostream& Matrix::print(ostream& os) const {
   for (size_t i = 0; i < m_nrows; ++i) {
     for (size_t j = 0; j < m_ncols; ++j) {
-      os << fmt::format(" {:8.4f}", (*this)(i, j));
+      os << fmt::format(" {:12.7f}", (*this)(i, j));
     }
     os << '\n';
   }
@@ -401,41 +401,33 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
     // need further optimization
     std::vector<double> proj_sum(matA.numRows(), 0);
     for (size_t k = 0; k < j; ++k) {
-      const auto proj = projectColumnVectors(matA, j, Q, k);
+      double numerator = 0;
+      double denominator = 0;
+      // maybe I need to do column pivoting here?
       for (size_t i = 0; i < matA.numRows(); ++i) {
-        proj_sum[i] += std::get<1>(proj)[i];
+        numerator += matA(i, j) * Q(i, k);
+        denominator += Q(i, k) * Q(i, k);
+      }
+      R(k, j) = numerator / denominator;
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        proj_sum[i] += Q(i, k) * R(k, j);
       }
       for (size_t i = 0; i < matA.numRows(); ++i) {
         Q(i, j) = matA(i, j) - proj_sum[i];
       }
-      R(k, j) = std::get<0>(proj);
     }
     if (j == 0) {
       for (size_t i = 0; i < matA.numRows(); ++i) {
         Q(i, j) = matA(i, j);
       }
     }
-    R(j, j) = 1.0;
+    for (size_t i = 0; i < matA.numRows(); ++i) {
+      R(j, j) += Q(i, j) * Q(i, j);
+    }
+    R(j, j) = std::sqrt(R(j, j));
+    for (size_t i = 0; i < matA.numRows(); ++i) {
+      Q(i, j) = Q(i, j) / R(j, j);
+    }
   }
   return std::make_tuple(Q, R);
-}
-
-tuple<double, vector<double>>
-projectColumnVectors(const Matrix& matA, size_t col_i,
-                     const Matrix& matB, size_t col_j) {
-  if (matA.numRows() != matB.numRows()) {
-    throw std::invalid_argument("Matrices A and B have different number of columns.");
-  }
-  std::vector<double> proj(matA.numRows(), 0);
-  double numerator = 0;
-  double denominator = 0;
-  for (size_t i = 0; i < matA.numRows(); ++i) {
-    numerator += matA(i, col_i) * matB(i, col_j);
-    denominator += matB(i, col_j) * matB(i, col_j);
-  }
-  const double factor = numerator / denominator;
-  for (size_t i = 0; i < matA.numRows(); ++i) {
-    proj[i] = factor * matB(i, col_j);
-  }
-  return std::make_tuple(factor, proj);
 }
