@@ -65,5 +65,8 @@ Matrix GaussianElimination(Matrix& matA, Matrix& matB);
 // matA = LL', return L
 Matrix CholeskyDecomposition(const Matrix& matA);
 
-// Gram-Schmidt process
+// classical Gram-Schmidt process
 tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA);
+
+// modified Gram-Schmidt process
+tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA);

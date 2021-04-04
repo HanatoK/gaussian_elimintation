@@ -424,3 +424,36 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
   }
   return std::make_tuple(Q, R);
 }
+
+tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
+  if (!matA.isSquare()) {
+    throw std::invalid_argument("Gram-Schmidt process is only implemented for square matrices.");
+  }
+  Matrix Q(matA);
+  Matrix R(matA.numRows(), matA.numColumns());
+  for (size_t j = 0; j < matA.numColumns(); ++j) {
+    // normalization
+    for (size_t i = 0; i < matA.numRows(); ++i) {
+      R(j, j) += Q(i, j) * Q(i, j);
+    }
+    R(j, j) = std::sqrt(R(j, j));
+    for (size_t i = 0; i < matA.numRows(); ++i) {
+      Q(i, j) = Q(i, j) / R(j, j);
+    }
+    for (size_t k = j + 1; k < matA.numColumns(); ++k) {
+      double numerator = 0;
+      double denominator = 0;
+      // NOTE: this was done by trial-and-error.
+      //       I need more time to figure out what's going on...
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        numerator += Q(i, j) * Q(i, k);
+        denominator += Q(i, j) * Q(i, j);
+      }
+      R(j, k) = numerator / denominator;
+      for (size_t i = 0; i < matA.numRows(); ++i) {
+        Q(i, k) -= Q(i, j) * R(j, k);
+      }
+    }
+  }
+  return std::make_tuple(Q, R);
+}
