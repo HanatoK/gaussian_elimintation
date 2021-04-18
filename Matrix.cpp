@@ -437,19 +437,20 @@ tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
       R(j, j) += Q(i, j) * Q(i, j);
     }
     R(j, j) = std::sqrt(R(j, j));
+    double denominator = 0;
     for (size_t i = 0; i < matA.numRows(); ++i) {
       Q(i, j) = Q(i, j) / R(j, j);
+      denominator += Q(i, j) * Q(i, j);
     }
+    // project all following vectors to j, and subtract the projection
     for (size_t k = j + 1; k < matA.numColumns(); ++k) {
       double numerator = 0;
-      double denominator = 0;
-      // NOTE: this was done by trial-and-error.
-      //       I need more time to figure out what's going on...
+      // calculate the projection
       for (size_t i = 0; i < matA.numRows(); ++i) {
         numerator += Q(i, j) * Q(i, k);
-        denominator += Q(i, j) * Q(i, j);
       }
       R(j, k) = numerator / denominator;
+      // subtract all following vectors
       for (size_t i = 0; i < matA.numRows(); ++i) {
         Q(i, k) -= Q(i, j) * R(j, k);
       }

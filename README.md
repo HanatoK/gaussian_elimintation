@@ -4,5 +4,5 @@
 - [x] Eigensystem
 - [x] LU decomposition
 - [ ] LUP decomposition (LU with pivoting)
-- [ ] QR decomposition
+- [x] QR decomposition (Gram-Schmidt)
 - [ ] Singular value decomposition
