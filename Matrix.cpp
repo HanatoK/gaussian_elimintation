@@ -433,21 +433,8 @@ tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
   if (matA.numRows() < matA.numColumns()) {
     throw std::invalid_argument("Gram-Schmidt process is only implemented for matrices that have more rows than columns.");
   }
-  std::mt19937 eng(0);
-  std::uniform_real_distribution<> dist(0, 1.0);
-  Matrix Q(matA.numRows(), matA.numRows());
-  Matrix R(Q.numRows(), Q.numColumns());
-  // copy from A to Q
-  for (size_t j = 0; j < matA.numRows(); ++j) {
-    for (size_t i = 0; i < matA.numRows(); ++i) {
-      if (j < matA.numColumns()) {
-        Q(i, j) = matA(i, j);
-      } else {
-        // I don't know if this is the correct way to handle m > n
-        Q(i, j) = dist(eng);
-      }
-    }
-  }
+  Matrix Q(matA);
+  Matrix R(matA.numColumns(), matA.numColumns());
   for (size_t j = 0; j < Q.numColumns(); ++j) {
     // normalization
     for (size_t i = 0; i < Q.numRows(); ++i) {
@@ -473,15 +460,5 @@ tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
       }
     }
   }
-  if (matA.isSquare()) {
-    return std::make_tuple(Q, R);
-  } else {
-    Matrix R2(matA.numRows(), matA.numColumns());
-    for (size_t j = 0; j < R2.numColumns(); ++j) {
-      for (size_t i = 0; i < R2.numRows(); ++i) {
-        R2(i, j) = R(i, j);
-      }
-    }
-    return std::make_tuple(Q, R2);
-  }
+  return std::make_tuple(Q, R);
 }
