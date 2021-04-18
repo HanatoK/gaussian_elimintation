@@ -61,7 +61,7 @@ void testGramSchmidt() {
 }
 
 void testModifiedGramSchmidt() {
-  std::cout << "void testGramSchmidt()\n";
+  std::cout << "void testModifiedGramSchmidt()\n";
   Matrix matA{{ 1.896457,  0.213800,  0.619222,  1.288015},
               { 0.213800,  0.039964,  0.080064,  0.142678},
               { 0.619222,  0.080064,  0.409956,  0.239832},
@@ -75,7 +75,7 @@ void testModifiedGramSchmidt() {
 }
 
 void testModifiedGramSchmidtRectangular() {
-  std::cout << "void testGramSchmidt()\n";
+  std::cout << "void testModifiedGramSchmidtRectangular()\n";
   Matrix matA{{ 1.896457,  0.213800},
               { 0.213800,  0.039964},
               { 0.619222,  0.080064},
