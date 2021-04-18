@@ -427,12 +427,6 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
 }
 
 tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
-//   if (!matA.isSquare()) {
-//     throw std::invalid_argument("Gram-Schmidt process is only implemented for square matrices.");
-//   }
-  if (matA.numRows() < matA.numColumns()) {
-    throw std::invalid_argument("Gram-Schmidt process is only implemented for matrices that have more rows than columns.");
-  }
   Matrix Q(matA);
   Matrix R(matA.numColumns(), matA.numColumns());
   for (size_t j = 0; j < Q.numColumns(); ++j) {
