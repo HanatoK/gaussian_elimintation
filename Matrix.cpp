@@ -1,6 +1,7 @@
 #include "Matrix.h"
 
 #include <stdexcept>
+#include <random>
 #include <fmt/format.h>
 
 Matrix::Matrix(initializer_list<initializer_list<double>> l) {
@@ -426,35 +427,61 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
 }
 
 tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
-  if (!matA.isSquare()) {
-    throw std::invalid_argument("Gram-Schmidt process is only implemented for square matrices.");
+//   if (!matA.isSquare()) {
+//     throw std::invalid_argument("Gram-Schmidt process is only implemented for square matrices.");
+//   }
+  if (matA.numRows() < matA.numColumns()) {
+    throw std::invalid_argument("Gram-Schmidt process is only implemented for matrices that have more rows than columns.");
   }
-  Matrix Q(matA);
-  Matrix R(matA.numRows(), matA.numColumns());
-  for (size_t j = 0; j < matA.numColumns(); ++j) {
-    // normalization
+  std::mt19937 eng(0);
+  std::uniform_real_distribution<> dist(0, 1.0);
+  Matrix Q(matA.numRows(), matA.numRows());
+  Matrix R(Q.numRows(), Q.numColumns());
+  // copy from A to Q
+  for (size_t j = 0; j < matA.numRows(); ++j) {
     for (size_t i = 0; i < matA.numRows(); ++i) {
+      if (j < matA.numColumns()) {
+        Q(i, j) = matA(i, j);
+      } else {
+        // I don't know if this is the correct way to handle m > n
+        Q(i, j) = dist(eng);
+      }
+    }
+  }
+  for (size_t j = 0; j < Q.numColumns(); ++j) {
+    // normalization
+    for (size_t i = 0; i < Q.numRows(); ++i) {
       R(j, j) += Q(i, j) * Q(i, j);
     }
     R(j, j) = std::sqrt(R(j, j));
     double denominator = 0;
-    for (size_t i = 0; i < matA.numRows(); ++i) {
+    for (size_t i = 0; i < Q.numRows(); ++i) {
       Q(i, j) = Q(i, j) / R(j, j);
       denominator += Q(i, j) * Q(i, j);
     }
     // project all following vectors to j, and subtract the projection
-    for (size_t k = j + 1; k < matA.numColumns(); ++k) {
+    for (size_t k = j + 1; k < Q.numColumns(); ++k) {
       double numerator = 0;
       // calculate the projection
-      for (size_t i = 0; i < matA.numRows(); ++i) {
+      for (size_t i = 0; i < Q.numRows(); ++i) {
         numerator += Q(i, j) * Q(i, k);
       }
       R(j, k) = numerator / denominator;
       // subtract all following vectors
-      for (size_t i = 0; i < matA.numRows(); ++i) {
+      for (size_t i = 0; i < Q.numRows(); ++i) {
         Q(i, k) -= Q(i, j) * R(j, k);
       }
     }
   }
-  return std::make_tuple(Q, R);
+  if (matA.isSquare()) {
+    return std::make_tuple(Q, R);
+  } else {
+    Matrix R2(matA.numRows(), matA.numColumns());
+    for (size_t j = 0; j < R2.numColumns(); ++j) {
+      for (size_t i = 0; i < R2.numRows(); ++i) {
+        R2(i, j) = R(i, j);
+      }
+    }
+    return std::make_tuple(Q, R2);
+  }
 }
