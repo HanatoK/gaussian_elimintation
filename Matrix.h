@@ -1,3 +1,6 @@
+#ifndef MATRIX_H
+#define MATRIX_H
+
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -70,3 +73,5 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA);
 
 // modified Gram-Schmidt process
 tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA);
+
+#endif // MATRIX_H
