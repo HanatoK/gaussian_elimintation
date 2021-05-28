@@ -3,6 +3,6 @@
 - [x] Linear solver using Gaussian elimination
 - [x] Eigensystem
 - [x] LU decomposition
-- [ ] LUP decomposition (LU with pivoting)
+- [x] LUP decomposition (LU with pivoting)
 - [x] QR decomposition (Gram-Schmidt)
 - [ ] Singular value decomposition
