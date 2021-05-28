@@ -35,6 +35,20 @@ void testLU(const Matrix& matA) {
   std::cout << "L*U:\n" << std::get<0>(lu)*std::get<1>(lu);
 }
 
+void testLUP(const Matrix& matA) {
+  tuple<Matrix, Matrix, Matrix> lup = matA.LUPDecomposition();
+  std::cout << "Matrix A:\n" << matA;
+  std::cout << "Matrix L:\n" << std::get<0>(lup);
+  std::cout << "Matrix U:\n" << std::get<1>(lup);
+  std::cout << "Matrix P:\n" << std::get<2>(lup);
+  std::cout << "L*U:\n" << std::get<0>(lup)*std::get<1>(lup);
+  std::cout << "P*A:\n" << std::get<2>(lup)*matA;
+  std::cout << "RMSE = "
+            << Matrix::rootMeanSquareError(
+                std::get<0>(lup)*std::get<1>(lup), std::get<2>(lup)*matA)
+            << std::endl;
+}
+
 void testCholesky() {
   Matrix matA{{ 1.896457,  0.213800,  0.619222,  1.288015},
               { 0.213800,  0.039964,  0.080064,  0.142678},
@@ -99,6 +113,9 @@ int main() {
               { 1.2,  7.1},
               {-2.8, -4.0},
               {-0.1, -9.6}};
+  Matrix matC{{0.0, 1.2, -3.0},
+              {-5.0, 0.5, 1.3},
+              {2.0, 0.6, 0}};
   testEigensystem(matA);
   testLinearSolver(matA, matB);
   testDeterminant(matA);
@@ -107,5 +124,6 @@ int main() {
   testGramSchmidt();
   testModifiedGramSchmidt();
   testModifiedGramSchmidtRectangular();
+  testLUP(matC);
   return 0;
 }

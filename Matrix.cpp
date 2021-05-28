@@ -214,6 +214,51 @@ tuple<Matrix, Matrix> Matrix::LUDecomposition() const {
   return std::make_tuple(matL, matU);
 }
 
+tuple<Matrix, Matrix, Matrix> Matrix::LUPDecomposition() const {
+  if (!isSquare()) {
+    throw std::invalid_argument("LUDecomposition is only available for square matrix.");
+  }
+  const size_t N = numRows();
+  Matrix matA = (*this);
+  Matrix matL(N, N);
+  Matrix matU(N, N);
+  Matrix matP(N, N);
+  for (size_t i = 0; i < N; ++i) {
+    matL(i, i) = 1.0;
+    matP(i, i) = 1.0;
+  }
+  for (size_t j = 0; j < N; ++j) {
+    double Umax = 0.0;
+    size_t current_row = j;
+    for (size_t r = j; r < N; ++r) {
+      const double Uii = matA(r, j);
+      if (std::abs(Uii) > Umax) {
+        Umax = std::abs(Uii);
+        current_row = r;
+      }
+    }
+    if (j != current_row) {
+      matA.swapRows(j, current_row);
+      matP.swapRows(j, current_row);
+    }
+    for (size_t i = 0; i < j + 1; ++i) {
+      double sum = 0.0;
+      for (size_t k = 0; k < i; ++k) {
+        sum += matL(i, k) * matU(k, j);
+      }
+      matU(i, j) = matA(i, j) - sum;
+    }
+    for (size_t i = j + 1; i < N; ++i) {
+      double sum = 0.0;
+      for (size_t k = 0; k < j; ++k) {
+        sum += matL(i, k) * matU(k, j);
+      }
+      matL(i, j) = (matA(i, j) - sum) / matU(j, j);
+    }
+  }
+  return std::make_tuple(matL, matU, matP);
+}
+
 void Matrix::calc_c_s(double a_pq, double a_pp, double a_qq,
                       double& c, double& s) {
   const double theta = 0.5 * (a_qq - a_pp) / a_pq;
@@ -278,6 +323,18 @@ void Matrix::JacobiSweep(Matrix& matA, Matrix& matP) {
       }
     }
   }
+}
+
+double Matrix::rootMeanSquareError(const Matrix& matA, const Matrix& matB) {
+  if (matA.m_data.size() != matB.m_data.size()) {
+    throw std::invalid_argument("RMSE requires the two matrices have the same size.");
+  }
+  double mse = 0.0;
+  for (size_t i = 0; i < matA.m_data.size(); ++i) {
+    const double diff = matA.m_data[i] - matB.m_data[i];
+    mse += diff * diff;
+  }
+  return std::sqrt(mse / matA.m_data.size());
 }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {

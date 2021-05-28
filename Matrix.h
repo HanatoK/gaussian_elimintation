@@ -38,6 +38,10 @@ public:
   tuple<Matrix, Matrix> realSymmetricEigenSolver(double threshold = 1e-7) const;
   // LU decomposition, no pivoting
   tuple<Matrix, Matrix> LUDecomposition() const;
+  // LUP decomposition
+  tuple<Matrix, Matrix, Matrix> LUPDecomposition() const;
+  // matrix difference
+  static double rootMeanSquareError(const Matrix& matA, const Matrix& matB);
 private:
   size_t m_nrows;
   size_t m_ncols;
