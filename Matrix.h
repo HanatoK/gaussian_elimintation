@@ -34,8 +34,6 @@ public:
   Matrix minor(size_t m, size_t n) const;
   // slow, not optimal
   double determinant() const;
-  // Eigen solver for real symmetric matrix
-  tuple<Matrix, Matrix> realSymmetricEigenSolver(double threshold = 1e-7) const;
   // LU decomposition, no pivoting
   tuple<Matrix, Matrix> LUDecomposition() const;
   // LUP decomposition
@@ -46,16 +44,27 @@ private:
   size_t m_nrows;
   size_t m_ncols;
   vector<double> m_data;
+};
+
+// Eigen solver for real symmetric matrix
+class realSymmetricEigenSolver {
+public:
+  realSymmetricEigenSolver(const Matrix& matA, double threshold = 1e-7);
+  tuple<Matrix, Matrix> solve();
+private:
+  Matrix m_matA;
+  Matrix m_matV;
+  double m_threshold;
 private:
   // helper function for Eigen solver
   // calculate c and s for Jacobi rotation
-  void calc_c_s(double a_pq, double a_pp, double a_qq, double& c, double& s);
+  static void calc_c_s(double a_pq, double a_pp, double a_qq, double& c, double& s);
   // apply the Jacobi transformation, P^-1 * A * P
   void applyJacobiTransformation(double c, double s, size_t p, size_t q);
   // multiply the Jacobi rotation matrix, A * V (for eigenvectors)
   void multiplyJacobi(double c, double s, size_t p, size_t q);
   // A sweep of Jacobi rotations
-  static void JacobiSweep(Matrix& matA, Matrix& matP);
+  void JacobiSweep();
 };
 
 // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c

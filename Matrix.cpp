@@ -125,27 +125,6 @@ Matrix Matrix::operator*(const Matrix& rhs) const {
   return result;
 }
 
-tuple<Matrix, Matrix> Matrix::realSymmetricEigenSolver(double threshold) const {
-  Matrix matA(*this);
-  Matrix matV = Matrix::Identity(numRows());
-  const double num_diagonal_elements = numRows() * (numRows() - 1) / 2.0;
-  double off_diag_sum = std::sqrt(matA.diagonalSquaredSum() / num_diagonal_elements);
-  // is this enough?
-  const size_t max_iteration = 20;
-  size_t iteration = 0;
-  while (off_diag_sum > threshold) {
-    Matrix::JacobiSweep(matA, matV);
-    off_diag_sum = std::sqrt(matA.diagonalSquaredSum() / num_diagonal_elements);
-    ++iteration;
-    std::cout << fmt::format("Sweep {:02d}: off-diagonal squared sum = {:8.4f}\n", iteration, off_diag_sum);
-    if (iteration >= max_iteration) {
-      std::cerr << "Maximum iterations reached in Eigen solver!\n";
-      break;
-    }
-  }
-  return std::make_tuple(matA, matV);
-}
-
 double Matrix::diagonalSquaredSum() const {
   double sum = 0.0;
   for (size_t i = 0; i < numRows(); ++i) {
@@ -259,72 +238,6 @@ tuple<Matrix, Matrix, Matrix> Matrix::LUPDecomposition() const {
   return std::make_tuple(matL, matU, matP);
 }
 
-void Matrix::calc_c_s(double a_pq, double a_pp, double a_qq,
-                      double& c, double& s) {
-  const double theta = 0.5 * (a_qq - a_pp) / a_pq;
-  const double sign = sgn(theta);
-  const double t = sign / (std::abs(theta) + std::sqrt(theta * theta + 1.0));
-  c = 1.0 / std::sqrt(t * t + 1.0);
-  s = t * c;
-}
-
-void Matrix::applyJacobiTransformation(double c, double s, size_t p, size_t q) {
-  const double c2 = c*c;
-  const double s2 = s*s;
-  const double cs = c*s;
-  // is it possible to optimize the copy?
-  const Matrix old_matrix(*this);
-  for (size_t i = 0; i < numRows(); ++i) {
-    for (size_t j = 0; j < numColumns(); ++j) {
-      if (i != p && i != q) {
-        if (j == p) {
-          (*this)(i, p) = c * old_matrix(i, p) - s * old_matrix(i, q);
-          (*this)(p, i) = (*this)(i, p);
-        }
-        if (j == q) {
-          (*this)(i, q) = c * old_matrix(i, q) + s * old_matrix(i, p);
-          (*this)(q, i) = (*this)(i, q);
-        }
-      }
-    }
-  }
-  (*this)(p, p) = c2 * old_matrix(p, p) + s2 * old_matrix(q, q) -
-                  2.0 * cs * old_matrix(p, q);
-  (*this)(q, q) = s2 * old_matrix(p, p) + c2 * old_matrix(q, q) +
-                  2.0 * cs * old_matrix(p, q);
-  (*this)(p, q) = 0;
-  (*this)(q, p) = (*this)(p, q);
-}
-
-void Matrix::multiplyJacobi(double c, double s, size_t p, size_t q) {
-  // is it possible to optimize the copy?
-  const Matrix old_matrix(*this);
-  for (size_t i = 0; i < numRows(); ++i) {
-    for (size_t j = 0; j < numColumns(); ++j) {
-      if (j == p) (*this)(i, p) = c * old_matrix(i, p) - s * old_matrix(i, q);
-      if (j == q) (*this)(i, q) = s * old_matrix(i, p) + c * old_matrix(i, q);
-    }
-  }
-}
-
-void Matrix::JacobiSweep(Matrix& matA, Matrix& matP) {
-  const size_t nrows = matA.numRows();
-  const size_t ncols = matA.numColumns();
-  double c, s;
-  for (size_t i = 0; i < nrows; ++i) {
-    for (size_t j = i + 1; j < ncols; ++j) {
-      const double a_pq = matA(i, j);
-      const double a_pp = matA(i, i);
-      const double a_qq = matA(j, j);
-      if (std::abs(a_pq) > 0) {
-        matA.calc_c_s(a_pq, a_pp, a_qq, c, s);
-        matA.applyJacobiTransformation(c, s, i, j);
-        matP.multiplyJacobi(c, s, i, j);
-      }
-    }
-  }
-}
-
 double Matrix::rootMeanSquareError(const Matrix& matA, const Matrix& matB) {
   if (matA.m_data.size() != matB.m_data.size()) {
     throw std::invalid_argument("RMSE requires the two matrices have the same size.");
@@ -335,6 +248,98 @@ double Matrix::rootMeanSquareError(const Matrix& matA, const Matrix& matB) {
     mse += diff * diff;
   }
   return std::sqrt(mse / matA.m_data.size());
+}
+
+realSymmetricEigenSolver::realSymmetricEigenSolver(
+  const Matrix& matA, double threshold):
+  m_matA(matA), m_matV(Matrix::Identity(m_matA.numRows())), m_threshold(threshold) {
+}
+
+tuple<Matrix, Matrix> realSymmetricEigenSolver::solve() {
+  const double num_diagonal_elements = m_matA.numRows() * (m_matA.numRows() - 1) / 2.0;
+  double off_diag_sum = std::sqrt(m_matA.diagonalSquaredSum() / num_diagonal_elements);
+  // is this enough?
+  const size_t max_iteration = 20;
+  size_t iteration = 0;
+  while (off_diag_sum > m_threshold) {
+    JacobiSweep();
+    off_diag_sum = std::sqrt(m_matA.diagonalSquaredSum() / num_diagonal_elements);
+    ++iteration;
+    std::cout << fmt::format("Sweep {:02d}: off-diagonal squared sum = {:8.4f}\n", iteration, off_diag_sum);
+    if (iteration >= max_iteration) {
+      std::cerr << "Maximum iterations reached in Eigen solver!\n";
+      break;
+    }
+  }
+  return std::make_tuple(m_matA, m_matV);
+}
+
+void realSymmetricEigenSolver::calc_c_s(
+  double a_pq, double a_pp, double a_qq, double& c, double& s) {
+  const double theta = 0.5 * (a_qq - a_pp) / a_pq;
+  const double sign = sgn(theta);
+  const double t = sign / (std::abs(theta) + std::sqrt(theta * theta + 1.0));
+  c = 1.0 / std::sqrt(t * t + 1.0);
+  s = t * c;
+}
+
+void realSymmetricEigenSolver::applyJacobiTransformation(
+  double c, double s, size_t p, size_t q) {
+  const double c2 = c*c;
+  const double s2 = s*s;
+  const double cs = c*s;
+  // is it possible to optimize the copy?
+  const Matrix old_matrix(m_matA);
+  for (size_t i = 0; i < m_matA.numRows(); ++i) {
+    for (size_t j = 0; j < m_matA.numColumns(); ++j) {
+      if (i != p && i != q) {
+        if (j == p) {
+          m_matA(i, p) = c * old_matrix(i, p) - s * old_matrix(i, q);
+          m_matA(p, i) = m_matA(i, p);
+        }
+        if (j == q) {
+          m_matA(i, q) = c * old_matrix(i, q) + s * old_matrix(i, p);
+          m_matA(q, i) = m_matA(i, q);
+        }
+      }
+    }
+  }
+  m_matA(p, p) = c2 * old_matrix(p, p) + s2 * old_matrix(q, q) -
+                  2.0 * cs * old_matrix(p, q);
+  m_matA(q, q) = s2 * old_matrix(p, p) + c2 * old_matrix(q, q) +
+                  2.0 * cs * old_matrix(p, q);
+  m_matA(p, q) = 0;
+  m_matA(q, p) = m_matA(p, q);
+}
+
+void realSymmetricEigenSolver::multiplyJacobi(
+  double c, double s, size_t p, size_t q) {
+  // is it possible to optimize the copy?
+  const Matrix old_matrix(m_matV);
+  for (size_t i = 0; i < m_matV.numRows(); ++i) {
+    for (size_t j = 0; j < m_matV.numColumns(); ++j) {
+      if (j == p) m_matV(i, p) = c * old_matrix(i, p) - s * old_matrix(i, q);
+      if (j == q) m_matV(i, q) = s * old_matrix(i, p) + c * old_matrix(i, q);
+    }
+  }
+}
+
+void realSymmetricEigenSolver::JacobiSweep() {
+  const size_t nrows = m_matA.numRows();
+  const size_t ncols = m_matA.numColumns();
+  double c, s;
+  for (size_t i = 0; i < nrows; ++i) {
+    for (size_t j = i + 1; j < ncols; ++j) {
+      const double a_pq = m_matA(i, j);
+      const double a_pp = m_matA(i, i);
+      const double a_qq = m_matA(j, j);
+      if (std::abs(a_pq) > 0) {
+        realSymmetricEigenSolver::calc_c_s(a_pq, a_pp, a_qq, c, s);
+        applyJacobiTransformation(c, s, i, j);
+        multiplyJacobi(c, s, i, j);
+      }
+    }
+  }
 }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
