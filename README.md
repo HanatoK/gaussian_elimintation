@@ -1,4 +1,4 @@
-#My playground for learning linear algebra
+# My playground for learning linear algebra
 
 - [x] Linear solver using Gaussian elimination
 - [x] Eigensystem
