@@ -165,79 +165,6 @@ double Matrix::determinant() const {
   }
 }
 
-tuple<Matrix, Matrix> Matrix::LUDecomposition() const {
-  if (!isSquare()) {
-    throw std::invalid_argument("LUDecomposition is only available for square matrix.");
-  }
-  const size_t N = numRows();
-  Matrix matL(N, N);
-  Matrix matU(N, N);
-  for (size_t i = 0; i < N; ++i) matL(i, i) = 1.0;
-  // no pivoting!!
-  for (size_t j = 0; j < N; ++j) {
-    for (size_t i = 0; i < j + 1; ++i) {
-      double sum = 0.0;
-      for (size_t k = 0; k < i; ++k) {
-        sum += matL(i, k) * matU(k, j);
-      }
-      matU(i, j) = (*this)(i, j) - sum;
-    }
-    for (size_t i = j + 1; i < N; ++i) {
-      double sum = 0.0;
-      for (size_t k = 0; k < j; ++k) {
-        sum += matL(i, k) * matU(k, j);
-      }
-      matL(i, j) = ((*this)(i, j) - sum) / matU(j, j);
-    }
-  }
-  return std::make_tuple(matL, matU);
-}
-
-tuple<Matrix, Matrix, Matrix> Matrix::LUPDecomposition() const {
-  if (!isSquare()) {
-    throw std::invalid_argument("LUDecomposition is only available for square matrix.");
-  }
-  const size_t N = numRows();
-  Matrix matA = (*this);
-  Matrix matL(N, N);
-  Matrix matU(N, N);
-  Matrix matP(N, N);
-  for (size_t i = 0; i < N; ++i) {
-    matL(i, i) = 1.0;
-    matP(i, i) = 1.0;
-  }
-  for (size_t j = 0; j < N; ++j) {
-    double Umax = 0.0;
-    size_t current_row = j;
-    for (size_t r = j; r < N; ++r) {
-      const double Uii = matA(r, j);
-      if (std::abs(Uii) > Umax) {
-        Umax = std::abs(Uii);
-        current_row = r;
-      }
-    }
-    if (j != current_row) {
-      matA.swapRows(j, current_row);
-      matP.swapRows(j, current_row);
-    }
-    for (size_t i = 0; i < j + 1; ++i) {
-      double sum = 0.0;
-      for (size_t k = 0; k < i; ++k) {
-        sum += matL(i, k) * matU(k, j);
-      }
-      matU(i, j) = matA(i, j) - sum;
-    }
-    for (size_t i = j + 1; i < N; ++i) {
-      double sum = 0.0;
-      for (size_t k = 0; k < j; ++k) {
-        sum += matL(i, k) * matU(k, j);
-      }
-      matL(i, j) = (matA(i, j) - sum) / matU(j, j);
-    }
-  }
-  return std::make_tuple(matL, matU, matP);
-}
-
 double Matrix::rootMeanSquareError(const Matrix& matA, const Matrix& matB) {
   if (matA.m_data.size() != matB.m_data.size()) {
     throw std::invalid_argument("RMSE requires the two matrices have the same size.");
@@ -248,6 +175,63 @@ double Matrix::rootMeanSquareError(const Matrix& matA, const Matrix& matB) {
     mse += diff * diff;
   }
   return std::sqrt(mse / matA.m_data.size());
+}
+
+LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
+  m_matL(matA.numRows(), matA.numRows()),
+  m_matU(matA.numRows(), matA.numRows()),
+  m_matP(matA.numRows(), matA.numRows()) {
+  if (!matA.isSquare()) {
+    throw std::invalid_argument("LUDecomposition is only available for square matrix.");
+  }
+  const size_t N = matA.numRows();
+  for (size_t i = 0; i < N; ++i) {
+    m_matL(i, i) = 1.0;
+    if (m_LUP) m_matP(i, i) = 1.0;
+  }
+  for (size_t j = 0; j < N; ++j) {
+    if (m_LUP) {
+      double Umax = 0.0;
+      size_t current_row = j;
+      for (size_t r = j; r < N; ++r) {
+        const double Uii = matA(r, j);
+        if (std::abs(Uii) > Umax) {
+          Umax = std::abs(Uii);
+          current_row = r;
+        }
+      }
+      if (j != current_row) {
+        matA.swapRows(j, current_row);
+        m_matP.swapRows(j, current_row);
+      }
+    }
+    for (size_t i = 0; i < j + 1; ++i) {
+      double sum = 0.0;
+      for (size_t k = 0; k < i; ++k) {
+        sum += m_matL(i, k) * m_matU(k, j);
+      }
+      m_matU(i, j) = matA(i, j) - sum;
+    }
+    for (size_t i = j + 1; i < N; ++i) {
+      double sum = 0.0;
+      for (size_t k = 0; k < j; ++k) {
+        sum += m_matL(i, k) * m_matU(k, j);
+      }
+      m_matL(i, j) = (matA(i, j) - sum) / m_matU(j, j);
+    }
+  }
+}
+
+const Matrix& LUDecomposition::getL() const {
+  return m_matL;
+}
+
+const Matrix& LUDecomposition::getU() const {
+  return m_matU;
+}
+
+const Matrix& LUDecomposition::getP() const {
+  return m_matP;
 }
 
 realSymmetricEigenSolver::realSymmetricEigenSolver(

@@ -33,24 +33,24 @@ void testDeterminant(const Matrix& matA) {
 }
 
 void testLU(const Matrix& matA) {
-  tuple<Matrix, Matrix> lu = matA.LUDecomposition();
+  LUDecomposition lu(matA, false);
   std::cout << "Matrix A:\n" << matA;
-  std::cout << "Matrix L:\n" << std::get<0>(lu);
-  std::cout << "Matrix U:\n" << std::get<1>(lu);
-  std::cout << "L*U:\n" << std::get<0>(lu)*std::get<1>(lu);
+  std::cout << "Matrix L:\n" << lu.getL();
+  std::cout << "Matrix U:\n" << lu.getU();
+  std::cout << "L*U:\n" << lu.getL()*lu.getU();
 }
 
 void testLUP(const Matrix& matA) {
-  tuple<Matrix, Matrix, Matrix> lup = matA.LUPDecomposition();
+  LUDecomposition lu(matA, true);
   std::cout << "Matrix A:\n" << matA;
-  std::cout << "Matrix L:\n" << std::get<0>(lup);
-  std::cout << "Matrix U:\n" << std::get<1>(lup);
-  std::cout << "Matrix P:\n" << std::get<2>(lup);
-  std::cout << "L*U:\n" << std::get<0>(lup)*std::get<1>(lup);
-  std::cout << "P*A:\n" << std::get<2>(lup)*matA;
+  std::cout << "Matrix L:\n" << lu.getL();
+  std::cout << "Matrix U:\n" << lu.getU();
+  std::cout << "Matrix P:\n" << lu.getP();
+  std::cout << "L*U:\n" << lu.getL()*lu.getU();
+  std::cout << "P*A:\n" << lu.getP()*matA;
   std::cout << "RMSE = "
             << Matrix::rootMeanSquareError(
-                std::get<0>(lup)*std::get<1>(lup), std::get<2>(lup)*matA)
+                lu.getL()*lu.getU(), lu.getP()*matA)
             << std::endl;
 }
 
@@ -129,6 +129,9 @@ int main() {
   testGramSchmidt();
   testModifiedGramSchmidt();
   testModifiedGramSchmidtRectangular();
+  std::cout << "========== Expected NaN:\n";
+  testLU(matC);
+  std::cout << "====================\n";
   testLUP(matC);
   return 0;
 }

@@ -34,16 +34,27 @@ public:
   Matrix minor(size_t m, size_t n) const;
   // slow, not optimal
   double determinant() const;
-  // LU decomposition, no pivoting
-  tuple<Matrix, Matrix> LUDecomposition() const;
-  // LUP decomposition
-  tuple<Matrix, Matrix, Matrix> LUPDecomposition() const;
-  // matrix difference
   static double rootMeanSquareError(const Matrix& matA, const Matrix& matB);
 private:
   size_t m_nrows;
   size_t m_ncols;
   vector<double> m_data;
+};
+
+// LU Decomposition
+class LUDecomposition {
+public:
+  LUDecomposition(Matrix matA, bool LUP = true);
+  const Matrix& getL() const;
+  const Matrix& getU() const;
+  const Matrix& getP() const;
+//   Matrix solve(const Matrix& matB) const;
+//   Matrix inverse() const;
+private:
+  bool m_LUP;
+  Matrix m_matL;
+  Matrix m_matU;
+  Matrix m_matP;
 };
 
 // Eigen solver for real symmetric matrix
