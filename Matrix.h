@@ -23,7 +23,8 @@ public:
   size_t numRows() const;
   size_t numColumns() const;
   ostream& print(ostream& os = std::cout) const;
-  static Matrix Identity(size_t N);
+  static Matrix identity(size_t N);
+  static Matrix rand(size_t N, double a = -1.0, double b = 1.0);
   // Matrix operations
   Matrix transpose() const;
   void swapRows(size_t i, size_t j);
@@ -48,13 +49,19 @@ public:
   const Matrix& getL() const;
   const Matrix& getU() const;
   const Matrix& getP() const;
+  const Matrix& getInverseL() const;
+  const Matrix& getInverseU() const;
 //   Matrix solve(const Matrix& matB) const;
-//   Matrix inverse() const;
+  Matrix inverse() const;
 private:
+  void inverse_matL();
+  void inverse_matU();
   bool m_LUP;
   Matrix m_matL;
   Matrix m_matU;
   Matrix m_matP;
+  Matrix m_inv_matL;
+  Matrix m_inv_matU;
 };
 
 // Eigen solver for real symmetric matrix

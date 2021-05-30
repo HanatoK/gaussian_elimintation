@@ -55,10 +55,23 @@ ostream& Matrix::print(ostream& os) const {
   return os;
 }
 
-Matrix Matrix::Identity(size_t N) {
+Matrix Matrix::identity(size_t N) {
   Matrix result(N, N);
   for (size_t i = 0; i < N; ++i) {
     result(i, i) = 1.0;
+  }
+  return result;
+}
+
+Matrix Matrix::rand(size_t N, double a, double b) {
+  Matrix result(N, N);
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> dis(a, b);
+  for (size_t i = 0; i < N; ++i) {
+    for (size_t j = 0; j < N; ++j) {
+      result(i, j) = dis(gen);
+    }
   }
   return result;
 }
@@ -180,7 +193,9 @@ double Matrix::rootMeanSquareError(const Matrix& matA, const Matrix& matB) {
 LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
   m_matL(matA.numRows(), matA.numRows()),
   m_matU(matA.numRows(), matA.numRows()),
-  m_matP(matA.numRows(), matA.numRows()) {
+  m_matP(matA.numRows(), matA.numRows()),
+  m_inv_matL(matA.numRows(), matA.numRows()),
+  m_inv_matU(matA.numRows(), matA.numRows()) {
   if (!matA.isSquare()) {
     throw std::invalid_argument("LUDecomposition is only available for square matrix.");
   }
@@ -189,6 +204,7 @@ LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
     m_matL(i, i) = 1.0;
     if (m_LUP) m_matP(i, i) = 1.0;
   }
+  // TODO: is this enough for pivoting??
   for (size_t j = 0; j < N; ++j) {
     if (m_LUP) {
       double Umax = 0.0;
@@ -205,6 +221,9 @@ LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
         m_matP.swapRows(j, current_row);
       }
     }
+  }
+  // TODO: combine the two loops!
+  for (size_t j = 0; j < N; ++j) {
     for (size_t i = 0; i < j + 1; ++i) {
       double sum = 0.0;
       for (size_t k = 0; k < i; ++k) {
@@ -220,6 +239,8 @@ LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
       m_matL(i, j) = (matA(i, j) - sum) / m_matU(j, j);
     }
   }
+  inverse_matL();
+  inverse_matU();
 }
 
 const Matrix& LUDecomposition::getL() const {
@@ -234,9 +255,65 @@ const Matrix& LUDecomposition::getP() const {
   return m_matP;
 }
 
+const Matrix& LUDecomposition::getInverseL() const {
+  return m_inv_matL;
+}
+
+const Matrix& LUDecomposition::getInverseU() const {
+  return m_inv_matU;
+}
+
+void LUDecomposition::inverse_matU() {
+  // backsubstitution
+  const int N = m_matU.numRows();
+  const Matrix matI = Matrix::identity(N);
+  if (N > 0) {
+    for (int j = N - 1; j >= 0; --j) {
+      for (int i = 0; i < N; ++i) {
+        if (j == (int)(N - 1)) {
+          m_inv_matU(j, i) = matI(j, i) / m_matU(j, j);
+        } else {
+          double sum = 0.0;
+          for (int k = 1; k < N - j; ++k) {
+            sum += m_inv_matU(j+k, i) * m_matU(j, j+k);
+          }
+          m_inv_matU(j, i) = (matI(j, i) - sum) / m_matU(j, j);
+        }
+      }
+    }
+  }
+}
+
+void LUDecomposition::inverse_matL() {
+  const size_t N = m_matU.numRows();
+  const Matrix matI = Matrix::identity(N);
+  if (N > 0) {
+    // iterate over columns
+    for (size_t j = 0; j < N; ++j) {
+      for (size_t i = 0; i < N; ++i) {
+        if (i == 0) {
+          m_inv_matL(i, j) = matI(i, j) / m_matL(i, i);
+        } else {
+          double sum = 0.0;
+          for (size_t k = 0; k < i; ++k) {
+            sum += m_matL(i, k) * m_inv_matL(k, j);
+          }
+          m_inv_matL(i, j) = (matI(i, j) - sum) / m_matL(i, i);
+        }
+      }
+    }
+  }
+}
+
+Matrix LUDecomposition::inverse() const {
+  const size_t N = m_matU.numRows();
+  const Matrix matI = Matrix::identity(N);
+  return m_inv_matU * m_inv_matL * m_matP * matI;
+}
+
 realSymmetricEigenSolver::realSymmetricEigenSolver(
   const Matrix& matA, double threshold):
-  m_matA(matA), m_matV(Matrix::Identity(m_matA.numRows())), m_threshold(threshold) {
+  m_matA(matA), m_matV(Matrix::identity(m_matA.numRows())), m_threshold(threshold) {
 }
 
 tuple<Matrix, Matrix> realSymmetricEigenSolver::solve() {
