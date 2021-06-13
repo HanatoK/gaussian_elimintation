@@ -1,4 +1,5 @@
 #include "Matrix.h"
+#include "Spline.h"
 
 // TODO: Singular value decomposition
 //       QR decomposition
@@ -129,6 +130,32 @@ void testInverse() {
   std::cout << "A*inv(A)=\n" << matA*lu.inverse();
 }
 
+void testInterpolateBase() {
+  std::cout << "Test InterpolateBase::locate\n";
+  std::vector<double> X{
+    -2.0, 1.0, 2.0, 4.0, 10.0, 15.0,
+    20.5, 66.3, 70.4, 127.0, 211.6, 215.2,
+    266.0, 268.0, 300.6, 466,3, 512.0};
+  std::vector<double> Y;
+  for (const auto& a : X) {
+    Y.push_back(std::sin(a));
+  }
+  InterpolateBase interp(X, Y, 5);
+  bool index_ok = true;
+  size_t i = interp.locate(80.0, &index_ok);
+  std::cout << std::boolalpha << "Index = " << i
+            << " (" << index_ok << ")\n";
+  std::cout << "Test InterpolateBase::fastIndex\n";
+  for (size_t i = 0; i < X.size(); ++i) {
+    X[i] = i * 5.0;
+    Y[i] = std::sin(X[i]);
+  }
+  interp = InterpolateBase(X, Y, 5, true);
+  i = interp.fastIndex(50.0, &index_ok);
+  std::cout << std::boolalpha << "Index = " << i
+            << " (" << index_ok << ")\n";
+}
+
 int main() {
   Matrix matA{{ 2.0,  0.5,  1.0, -2.0,  3.0},
               { 0.5,  1.0,  0.1,  4.0, -9.0},
@@ -156,5 +183,6 @@ int main() {
   std::cout << "====================\n";
   testLUP(matC);
   testInverse();
+  testInterpolateBase();
   return 0;
 }
