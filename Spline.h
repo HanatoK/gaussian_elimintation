@@ -12,13 +12,11 @@ public:
   virtual ~InterpolateBase() {}
   size_t index(const double x, bool* index_ok = nullptr);
   size_t fastIndex(const double x, bool* index_ok = nullptr);
-  size_t locate(const double x, bool* index_ok = nullptr, long long int M = -1); // aka as "locate" in NR
+  size_t locate(const double x, bool* index_ok = nullptr); // aka as "locate" in NR
   virtual double rawInterp(const size_t table_index, const double x);
 private:
   std::vector<double> m_X;
   std::vector<double> m_Y;
-  std::vector<size_t> m_index;
-  double m_min_dist;
   size_t m_segment_range;
   bool m_equidistant;
 };

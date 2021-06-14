@@ -131,32 +131,27 @@ void testInverse() {
 }
 
 void testInterpolateBase() {
-  std::cout << "Test InterpolateBase::index\n";
+  std::cout << "Test InterpolateBase::locate\n";
   std::vector<double> X{
     -2.0, 1.0, 2.0, 4.0, 10.0, 15.0,
     20.5, 66.3, 70.4, 127.0, 211.6, 215.2,
-    266.0, 268.0, 300.6, 466.3, 512.0};
+    266.0, 268.0, 300.6, 466,3, 512.0};
   std::vector<double> Y;
   for (const auto& a : X) {
     Y.push_back(std::sin(a));
   }
   InterpolateBase interp(X, Y, 5);
-  double test_number = 1.0;
   bool index_ok = true;
-  size_t i = interp.index(test_number, &index_ok);
-  size_t i_l = interp.locate(test_number, &index_ok);
+  size_t i = interp.locate(80.0, &index_ok);
   std::cout << std::boolalpha << "Index = " << i
             << " (" << index_ok << ")\n";
-  std::cout << "Test InterpolateBase::locate\n"
-            << "Index = " << i_l << std::endl;
   std::cout << "Test InterpolateBase::fastIndex\n";
   for (size_t i = 0; i < X.size(); ++i) {
     X[i] = i * 5.0;
     Y[i] = std::sin(X[i]);
   }
-  test_number = 50.0;
   interp = InterpolateBase(X, Y, 5, true);
-  i = interp.fastIndex(test_number, &index_ok);
+  i = interp.fastIndex(50.0, &index_ok);
   std::cout << std::boolalpha << "Index = " << i
             << " (" << index_ok << ")\n";
 }
