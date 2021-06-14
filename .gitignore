@@ -1,3 +1,4 @@
 *.txt
 a.out
 build/
+build_debug/

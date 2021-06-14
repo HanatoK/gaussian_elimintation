@@ -1,5 +1,7 @@
 #include "Spline.h"
 
+#include <fmt/format.h>
+
 InterpolateBase::InterpolateBase(const std::vector<double>& X,
                                  const std::vector<double>& Y,
                                  const size_t M, const bool equidistant):
@@ -83,27 +85,30 @@ void SplineInterpolate::calcFactors() {
     dX[i] = m_X[i+1] - m_X[i];
     dY_dX2[i] = m_Y[i+1] - m_Y[i];
     dY_dX2[i] /= dX[i] * dX[i];
+    // fmt::print("i = {:d} ; dX = {:12.7f} ; dY_dX2 = {:12.7f}\n", i, dX[i], dY_dX2[i]);
   }
   // there are N unknowns but N - 2 equations ??
   // build the matrix and the vector first
   Matrix lhs_matrix(N, N);
   Matrix rhs_vector(N, 1);
   for (size_t i = 1; i < N; ++i) {
-    rhs_vector(i, 1) = 3.0 * (dY_dX2[i] - dY_dX2[i-1]); // ?
+    rhs_vector(i, 0) = 3.0 * (dY_dX2[i] - dY_dX2[i-1]); // ?
     lhs_matrix(i, i-1) = -1.0 / dX[i-1];
     lhs_matrix(i, i) = 2.0 / dX[i];
-    if (i < N - 1) {
+    if (i < N - 1) { // ??
       lhs_matrix(i, i+1) = 1.0 / dX[i];
     }
   }
   if (m_bc == boundary_condition::natural) {
     // first node
-    rhs_vector(0, 1) = 3.0 * dY_dX2[0];
+    rhs_vector(0, 0) = 3.0 * dY_dX2[0];
     lhs_matrix(0, 0) = 2.0 / dX[0];
     lhs_matrix(0, 1) = 1.0 / dX[0];
   }
+  std::cout << lhs_matrix;
+  std::cout << rhs_vector;
   const Matrix tmp_B = GaussianElimination(lhs_matrix, rhs_vector);
-  std::cout << "N = " << N << std::endl;
+  // std::cout << "N = " << N << std::endl;
   for (size_t i = 0; i < N - 1; ++i) {
     m_B[i] = tmp_B(i, 0);
     const double tmp_sum_b = 2.0 * tmp_B(i, 0) + tmp_B(i+1, 0);

@@ -159,17 +159,17 @@ void testInterpolateBase() {
 }
 
 void testSplineInterpolation() {
-  const size_t N = 100;
+  const size_t N = 6;
   std::vector<double> X(N);
   std::vector<double> Y(N);
   for (size_t i = 0; i < N; ++i) {
     X[i] = i;
-    Y[i] = double(i) / N * M_PI;
+    Y[i] = std::sin(double(i) / N * M_PI);
   }
   SplineInterpolate spline_interp(X, Y, true);
   for (size_t i = 0; i < N; ++i) {
     const double val = spline_interp.evaluate(i);
-    fmt::format("x = {:6lf} ; y = {:12.7lf} ; interp = {12.7lf}\n", X[i], Y[i], val);
+    fmt::print("x = {:6f} ; y = {:12.7f} ; interp = {:12.7f}\n", X[i], Y[i], val);
   }
 }
 
