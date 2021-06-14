@@ -411,8 +411,10 @@ Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
   }
   // B has M columns
   const size_t M = matB.numColumns();
+  std::cerr << "N = " << N << " ; M = " << M << std::endl;
   // row index of column pivots
   vector<size_t> pivot_indices(N, 0);
+  std::cerr << "why? " << std::endl;
   // bookkeep the used rows
   vector<bool> used_rows(N, false);
   // iterate over columns

@@ -1,6 +1,8 @@
 #include "Matrix.h"
 #include "Spline.h"
 
+#include <fmt/format.h>
+
 // TODO: Singular value decomposition
 //       QR decomposition
 
@@ -156,6 +158,21 @@ void testInterpolateBase() {
             << " (" << index_ok << ")\n";
 }
 
+void testSplineInterpolation() {
+  const size_t N = 100;
+  std::vector<double> X(N);
+  std::vector<double> Y(N);
+  for (size_t i = 0; i < N; ++i) {
+    X[i] = i;
+    Y[i] = double(i) / N * M_PI;
+  }
+  SplineInterpolate spline_interp(X, Y, true);
+  for (size_t i = 0; i < N; ++i) {
+    const double val = spline_interp.evaluate(i);
+    fmt::format("x = {:6lf} ; y = {:12.7lf} ; interp = {12.7lf}\n", X[i], Y[i], val);
+  }
+}
+
 int main() {
   Matrix matA{{ 2.0,  0.5,  1.0, -2.0,  3.0},
               { 0.5,  1.0,  0.1,  4.0, -9.0},
@@ -184,5 +201,6 @@ int main() {
   testLUP(matC);
   testInverse();
   testInterpolateBase();
+  testSplineInterpolation();
   return 0;
 }
