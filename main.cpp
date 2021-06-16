@@ -159,17 +159,24 @@ void testInterpolateBase() {
 }
 
 void testSplineInterpolation() {
-  const size_t N = 6;
+  const size_t N = 10;
   std::vector<double> X(N);
   std::vector<double> Y(N);
   for (size_t i = 0; i < N; ++i) {
     X[i] = i;
-    Y[i] = std::sin(double(i) / N * M_PI);
+    Y[i] = std::sin(double(i) / 2 * M_PI);
+    fmt::print("x = {:6f} ; y = {:6f}\n", X[i], Y[i]);
   }
-  SplineInterpolate spline_interp(X, Y, true);
-  for (size_t i = 0; i < N; ++i) {
-    const double val = spline_interp.evaluate(i);
-    fmt::print("x = {:6f} ; y = {:12.7f} ; interp = {:12.7f}\n", X[i], Y[i], val);
+  SplineInterpolate spline_interp_natural(X, Y, true);
+  SplineInterpolate spline_interp_not_a_knot(X, Y, true, SplineInterpolate::boundary_condition::not_a_knot);
+  for (size_t i = 0; i < N - 1; ++i) {
+    const size_t M = (i == N - 2) ? 21 : 20;
+    for (size_t j = 0; j < M; ++j) {
+      const double tmp_x = double(j) / 20.0 + i;
+      const double val = spline_interp_natural.evaluate(tmp_x);
+      const double val2 = spline_interp_not_a_knot.evaluate(tmp_x);
+      fmt::print("x = {:6f} ; natural = {:12.7f} ; not_a_knot = {:12.7f}\n", tmp_x, val, val2);
+    }
   }
 }
 

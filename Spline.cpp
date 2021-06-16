@@ -68,14 +68,11 @@ SplineInterpolate::SplineInterpolate(
 
 void SplineInterpolate::calcFactors() {
   // solve the equations:
-  // -\frac{1}{\Delta x_i}B_i+
-  // \frac{2}{\Delta x_{i+1}}B_{i+1}+
-  // \frac{1}{\Delta x_{i+1}}B_{i+2}
-  // =3\left(\frac{\Delta y_{i+1}}{\Delta x_{i+1}^2}-\frac{\Delta y_{i}}{\Delta x_{i}^2}\right)
+  // \Delta X_i C_i + 2(\Delta X_{i+1} + \Delta X_{i})C_{i+1}+\Delta X_{i+1} C_{i+2} = 3(\Delta Y_{i+1} - \Delta Y_{i})
   const size_t num_points = m_X.size();
   const size_t N = num_points - 1;
   using std::vector;
-  vector<double> dY_dX2(N);
+  vector<double> dY(N);
   vector<double> dX(N);
   m_A.resize(N);
   m_B.resize(N);
@@ -83,46 +80,46 @@ void SplineInterpolate::calcFactors() {
   m_D.resize(N);
   for (size_t i = 0; i < N; ++i) {
     dX[i] = m_X[i+1] - m_X[i];
-    dY_dX2[i] = m_Y[i+1] - m_Y[i];
-    dY_dX2[i] /= dX[i] * dX[i];
-    // fmt::print("i = {:d} ; dX = {:12.7f} ; dY_dX2 = {:12.7f}\n", i, dX[i], dY_dX2[i]);
+    dY[i] = m_Y[i+1] - m_Y[i];
   }
-  // there are N unknowns but N - 2 equations ??
-  // build the matrix and the vector first
-  Matrix lhs_matrix(N, N);
-  Matrix rhs_vector(N, 1);
+  Matrix tmp_mat(N+1, N+1);
+  Matrix tmp_vec(N+1, 1);
   for (size_t i = 1; i < N; ++i) {
-    rhs_vector(i, 0) = 3.0 * (dY_dX2[i] - dY_dX2[i-1]); // ?
-    lhs_matrix(i, i-1) = -1.0 / dX[i-1];
-    lhs_matrix(i, i) = 2.0 / dX[i];
-    if (i < N - 1) { // ??
-      lhs_matrix(i, i+1) = 1.0 / dX[i];
-    }
+    tmp_mat(i, i-1) = dX[i-1];
+    tmp_mat(i, i) = 2.0 * (dX[i-1] + dX[i]);
+    tmp_mat(i, i+1) = dX[i];
+    tmp_vec(i, 0) = 3.0 * (dY[i] / dX[i] - dY[i-1] / dX[i-1]);
   }
   if (m_bc == boundary_condition::natural) {
-    // first node
-    rhs_vector(0, 0) = 3.0 * dY_dX2[0];
-    lhs_matrix(0, 0) = 2.0 / dX[0];
-    lhs_matrix(0, 1) = 1.0 / dX[0];
+    // std::cout << "Using natural boundary";
+    // natural boundary:
+    // S_{0}'' (X_0) = 0
+    tmp_mat(0, 0) = 1.0;
+    tmp_vec(0, 0) = 0.0;
+    // although we have only N splines, assuming there is an extra spline,
+    // then S_{N}'' (X_N) = 0
+    tmp_mat(N, N) = 1.0;
+    tmp_vec(N, 0) = 0.0;
+  } else if (m_bc == boundary_condition::not_a_knot) {
+    // std::cout << "Using not-a-knot boundary";
+    // S_{0}''' (X_1) = S_{1}''' (X_1)
+    tmp_mat(0, 0) = -dX[1];
+    tmp_mat(0, 1) = dX[0] + dX[1];
+    tmp_mat(0, 2) = -dX[0];
+    tmp_vec(0, 0) = 0.0;
+    tmp_mat(N, N-2) = -dX[N-2];
+    tmp_mat(N, N-1) = dX[N-2] + dX[N-1];
+    tmp_mat(N, N) = -dX[N-1];
+    tmp_vec(N, N) = 0.0;
   }
-  std::cout << lhs_matrix;
-  std::cout << rhs_vector;
-  const Matrix tmp_B = GaussianElimination(lhs_matrix, rhs_vector);
-  // std::cout << "N = " << N << std::endl;
-  for (size_t i = 0; i < N - 1; ++i) {
-    m_B[i] = tmp_B(i, 0);
-    const double tmp_sum_b = 2.0 * tmp_B(i, 0) + tmp_B(i+1, 0);
-    m_C[i] = 3.0 * dY_dX2[i] - tmp_sum_b / dX[i];
-  }
-  if (m_bc == boundary_condition::natural) {
-    m_B[N-1] = tmp_B(N-1, 0);
-    m_C[N-1] = 3.0 * (dY_dX2[N-1] - m_B[N-1] / dX[N-1]) / 2.0;
-  }
-  for (size_t i = 0; i < N - 1; ++i) {
-    m_D[i] = (m_C[i+1] - m_C[i]) / (3.0 * m_X[i]);
-  }
-  if (m_bc == boundary_condition::natural) {
-    m_D[N-1] = -m_C[N-1] / dX[N-1];
+  // std::cout << "Interpolation matrix:\n" << tmp_mat;
+  // std::cout << "Interpolation vector:\n" << tmp_vec;
+  const Matrix tmp_C = GaussianElimination(tmp_mat, tmp_vec);
+  for (size_t i = 0; i < N; ++i) {
+    m_C[i] = tmp_C(i, 0);
+    m_D[i] = (tmp_C(i+1, 0) - tmp_C(i, 0)) / (3.0 * dX[i]);
+    m_B[i] = dY[i] / dX[i] - dX[i] * (2.0 * tmp_C(i, 0) + tmp_C(i+1, 0)) / 3.0;
+    m_A[i] = m_Y[i];
   }
 }
 
