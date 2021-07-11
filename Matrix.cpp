@@ -204,7 +204,6 @@ LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
     m_matL(i, i) = 1.0;
     if (m_LUP) m_matP(i, i) = 1.0;
   }
-  // TODO: is this enough for pivoting??
   for (size_t j = 0; j < N; ++j) {
     if (m_LUP) {
       double Umax = 0.0;
@@ -222,7 +221,6 @@ LUDecomposition::LUDecomposition(Matrix matA, bool LUP): m_LUP(LUP),
       }
     }
   }
-  // TODO: combine the two loops!
   for (size_t j = 0; j < N; ++j) {
     for (size_t i = 0; i < j + 1; ++i) {
       double sum = 0.0;
