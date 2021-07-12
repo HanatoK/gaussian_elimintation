@@ -85,6 +85,16 @@ private:
   void JacobiSweep();
 };
 
+class HouseholderTransformation {
+public:
+  HouseholderTransformation(const Matrix& matA);
+  static Matrix getMatrixPLeft(
+    const Matrix& matA, const int col, const int row);
+  static tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA);
+private:
+  Matrix m_matA;
+};
+
 // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 template <typename T> int sgn(T val) {
   return (T(0) < val) - (val < T(0));

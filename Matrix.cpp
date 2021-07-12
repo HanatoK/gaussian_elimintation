@@ -401,6 +401,50 @@ void realSymmetricEigenSolver::JacobiSweep() {
   }
 }
 
+HouseholderTransformation::HouseholderTransformation(
+  const Matrix& matA): m_matA(matA) {}
+
+Matrix HouseholderTransformation::getMatrixPLeft(
+  const Matrix& matA, const int col, const int row) {
+  // get a column vector from A and construct a left householder matrix
+  Matrix P = Matrix::identity(matA.numRows());
+  std::vector<double> u(matA.numRows() - row, 0);
+  double norm2 = 0;
+  for (size_t i = row; i < matA.numRows(); ++i) {
+    const size_t index_u = i - row;
+    u[index_u] = matA(i, col);
+    norm2 += u[index_u] * u[index_u];
+  }
+  double H = norm2 - u[0] * u[0];
+  const double norm = std::sqrt(norm2);
+  const double sign = sgn(matA(col, row));
+  u[0] = u[0] + sign * norm;
+  H = 0.5 * (H + u[0] * u[0]);
+  for (size_t i = row; i < matA.numRows(); ++i) {
+    const size_t index_u_i = i - row;
+    for (size_t j = row; j < matA.numRows(); ++j) {
+      const size_t index_u_j = j - row;
+      P(i, j) = P(i, j) - u[index_u_i] * u[index_u_j] / H;
+    }
+  }
+  return P;
+}
+
+tuple<Matrix, Matrix> HouseholderTransformation::HouseholderQR(
+  const Matrix& matA) {
+  // naive implementation (need further optimization)
+  const size_t N = matA.numRows();
+  Matrix R = matA;
+  Matrix Q = Matrix::identity(N);
+  for (size_t i = 0; i < N; ++i) {
+    const Matrix P = HouseholderTransformation::getMatrixPLeft(
+      R, i, i);
+    Q = Q * P;
+    R = P * R;
+  }
+  return std::make_tuple(Q, R);
+}
+
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
   // assume matA is always a square matrix
   const size_t N = matA.numRows();
