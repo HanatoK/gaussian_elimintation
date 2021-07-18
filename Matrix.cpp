@@ -401,10 +401,7 @@ void realSymmetricEigenSolver::JacobiSweep() {
   }
 }
 
-HouseholderTransformation::HouseholderTransformation(
-  const Matrix& matA): m_matA(matA) {}
-
-Matrix HouseholderTransformation::getMatrixPLeft(
+Matrix getMatrixPLeft(
   const Matrix& matA, const int col, const int row) {
   // get a column vector from A and construct a left householder matrix
   Matrix P = Matrix::identity(matA.numRows());
@@ -430,14 +427,14 @@ Matrix HouseholderTransformation::getMatrixPLeft(
   return P;
 }
 
-tuple<Matrix, Matrix> HouseholderTransformation::HouseholderQR(
+tuple<Matrix, Matrix> HouseholderQR(
   const Matrix& matA) {
   // naive implementation (need further optimization)
   const size_t N = matA.numRows();
   Matrix R = matA;
   Matrix Q = Matrix::identity(N);
   for (size_t i = 0; i < N; ++i) {
-    const Matrix P = HouseholderTransformation::getMatrixPLeft(
+    const Matrix P = getMatrixPLeft(
       R, i, i);
     Q = Q * P;
     R = P * R;

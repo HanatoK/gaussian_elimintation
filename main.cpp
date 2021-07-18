@@ -181,7 +181,7 @@ void testSplineInterpolation() {
 }
 
 void testHouseholderQR(const Matrix& matA) {
-  tuple<Matrix, Matrix> qr = HouseholderTransformation::HouseholderQR(matA);
+  tuple<Matrix, Matrix> qr = HouseholderQR(matA);
   std::cout << "Matrix A:\n" << matA;
   std::cout << "Matrix Q:\n" << std::get<0>(qr);
   std::cout << "Matrix R:\n" << std::get<1>(qr);
