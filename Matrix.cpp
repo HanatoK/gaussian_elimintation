@@ -402,7 +402,19 @@ void realSymmetricEigenSolver::JacobiSweep() {
 }
 
 Matrix getMatrixPLeft(
-  const Matrix& matA, const int col, const int row) {
+  const Matrix& matA, const size_t col, const size_t row) {
+  if (row >= matA.numRows()) {
+    const std::string err = "Access row " + std::to_string(row) +
+       " but matrix has only " + std::to_string(matA.numRows()) +
+       " row(s)!\n";
+    throw std::out_of_range(err.c_str());
+  }
+  if (col >= matA.numColumns()) {
+    const std::string err = "Access column " + std::to_string(col) +
+       " but matrix has only " + std::to_string(matA.numColumns()) +
+       " column(s)!\n";
+    throw std::out_of_range(err.c_str());
+  }
   // get a column vector from A and construct a left householder matrix
   Matrix P = Matrix::identity(matA.numRows());
   std::vector<double> u(matA.numRows() - row, 0);
@@ -427,20 +439,29 @@ Matrix getMatrixPLeft(
   return P;
 }
 
-tuple<Matrix, Matrix> HouseholderQR(
-  const Matrix& matA) {
+tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
   // naive implementation (need further optimization)
-  const size_t N = matA.numRows();
   Matrix R = matA;
-  Matrix Q = Matrix::identity(N);
-  for (size_t i = 0; i < N; ++i) {
+  Matrix Q = Matrix::identity(matA.numRows());
+  size_t i = 0, j = 0;
+  while (i < matA.numRows() && j < matA.numColumns()) {
     const Matrix P = getMatrixPLeft(
-      R, i, i);
+      R, i, j);
     Q = Q * P;
     R = P * R;
+    ++i;
+    ++j;
   }
   return std::make_tuple(Q, R);
 }
+
+// tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
+//   const size_t N = matA.numRows();
+//   // iterate over all rows
+//   for (size_t i = 0; i < N; ++i) {
+
+//   }
+// }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
   // assume matA is always a square matrix

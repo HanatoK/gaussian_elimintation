@@ -86,7 +86,7 @@ private:
 };
 
 Matrix getMatrixPLeft(
-  const Matrix& matA, const int col, const int row);
+  const Matrix& matA, const size_t col, const size_t row);
 tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA);
 
 // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
