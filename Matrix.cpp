@@ -463,32 +463,36 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
 }
 
 tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
+  const size_t M = matA.numRows();
+  const size_t N = matA.numColumns();
   Matrix R = matA;
   Matrix R_previous = R;
-  // TODO: can we also calculate P implicitly?
-  Matrix P = Matrix::identity(matA.numRows());
-  Matrix Q = Matrix::identity(matA.numRows());
+  Matrix P(M, M);
+  Matrix Q = Matrix::identity(M);
   Matrix Q_previous = Q;
   size_t row = 0, col = 0;
-  double norm2 = 0, H = 0, norm = 0, sign = 1;
+  double norm2 = 0, H = 0, norm = 0;
   std::vector<double> u;
-  u.reserve(matA.numRows());
-  while (row < matA.numRows() && col < matA.numColumns()) {
+  u.reserve(M);
+  while (row < M && col < N) {
     u.clear();
     norm2 = 0;
-    for (size_t i = row; i < R.numRows(); ++i) {
+    for (size_t i = row; i < M; ++i) {
       u.push_back(R(i, col));
       norm2 += R(i, col) * R(i, col);
+      for (size_t j = row; j < M; ++j) {
+        if (i == j) P(i, j) = 1;
+        else P(i, j) = 0;
+      }
     }
     H = norm2 - u[0] * u[0];
     norm = std::sqrt(norm2);
-    sign = sgn(R(col, row));
-    u[0] += sign * norm;
+    u[0] += sgn(R(col, row)) * norm;
     H = 0.5 * (H + u[0] * u[0]);
     // P and Q are square matrices
-    for (size_t i = row; i < R.numRows(); ++i) {
+    for (size_t i = row; i < M; ++i) {
       const size_t index_u_i = i - row;
-      for (size_t j = i; j < matA.numRows(); ++j) {
+      for (size_t j = i; j < M; ++j) {
         const size_t index_u_j = j - row;
         P(i, j) = P(i, j) - u[index_u_i] * u[index_u_j] / H;
         // P.transpose() == P
@@ -497,18 +501,17 @@ tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
         }
       }
       // implicitly apply the Householder transformation at the left
-      for (size_t j = 0; j < R.numColumns(); ++j) {
+      for (size_t j = 0; j < N; ++j) {
         double sum = 0.0;
         // P.numcolumns() == R.numRows()
-        for (size_t k = row; k < R.numRows(); ++k) {
+        for (size_t k = row; k < M; ++k) {
           sum += P(i, k) * R_previous(k, j);
         }
         R(i, j) = sum;
       }
-      for (size_t j = 0; j < Q.numRows(); ++j) {
+      for (size_t j = 0; j < M; ++j) {
         double sum = 0.0;
-        for (size_t k = row; k < Q.numColumns(); ++k) {
-          // P(k, i) = P(i, k)
+        for (size_t k = row; k < M; ++k) {
           sum += Q_previous(j, k) * P(k, i);
         }
         Q(j, i) = sum;
@@ -518,7 +521,6 @@ tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
     ++col;
     R_previous = R;
     Q_previous = Q;
-    P = Matrix::identity(matA.numRows());
   }
   return std::make_tuple(Q, R);
 }

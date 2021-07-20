@@ -222,6 +222,7 @@ int main() {
   // testInverse();
   // testInterpolateBase();
   // testSplineInterpolation();
+  testHouseholderQR(matA);
   testHouseholderQR(matB);
   return 0;
 }
