@@ -431,9 +431,13 @@ Matrix getMatrixPLeft(
   H = 0.5 * (H + u[0] * u[0]);
   for (size_t i = row; i < matA.numRows(); ++i) {
     const size_t index_u_i = i - row;
-    for (size_t j = row; j < matA.numRows(); ++j) {
+    for (size_t j = i; j < matA.numRows(); ++j) {
       const size_t index_u_j = j - row;
       P(i, j) = P(i, j) - u[index_u_i] * u[index_u_j] / H;
+      // P.transpose() == P
+      if (j > i) {
+        P(j, i) = P(i, j);
+      }
     }
   }
   return P;
@@ -447,21 +451,77 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
   while (i < matA.numRows() && j < matA.numColumns()) {
     const Matrix P = getMatrixPLeft(
       R, i, j);
+    std::cout << "P = \n" << P;
     Q = Q * P;
     R = P * R;
+    std::cout << "R = \n" << R;
+    std::cout << "Q = \n" << Q;
     ++i;
     ++j;
   }
   return std::make_tuple(Q, R);
 }
 
-// tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
-//   const size_t N = matA.numRows();
-//   // iterate over all rows
-//   for (size_t i = 0; i < N; ++i) {
-
-//   }
-// }
+tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
+  Matrix R = matA;
+  Matrix R_previous = R;
+  // TODO: can we also calculate P implicitly?
+  Matrix P = Matrix::identity(matA.numRows());
+  Matrix Q = Matrix::identity(matA.numRows());
+  Matrix Q_previous = Q;
+  size_t row = 0, col = 0;
+  double norm2 = 0, H = 0, norm = 0, sign = 1;
+  std::vector<double> u;
+  u.reserve(matA.numRows());
+  while (row < matA.numRows() && col < matA.numColumns()) {
+    u.clear();
+    norm2 = 0;
+    for (size_t i = row; i < R.numRows(); ++i) {
+      u.push_back(R(i, col));
+      norm2 += R(i, col) * R(i, col);
+    }
+    H = norm2 - u[0] * u[0];
+    norm = std::sqrt(norm2);
+    sign = sgn(R(col, row));
+    u[0] += sign * norm;
+    H = 0.5 * (H + u[0] * u[0]);
+    // P and Q are square matrices
+    for (size_t i = row; i < R.numRows(); ++i) {
+      const size_t index_u_i = i - row;
+      for (size_t j = i; j < matA.numRows(); ++j) {
+        const size_t index_u_j = j - row;
+        P(i, j) = P(i, j) - u[index_u_i] * u[index_u_j] / H;
+        // P.transpose() == P
+        if (j > i) {
+          P(j, i) = P(i, j);
+        }
+      }
+      // implicitly apply the Householder transformation at the left
+      for (size_t j = 0; j < R.numColumns(); ++j) {
+        double sum = 0.0;
+        // P.numcolumns() == R.numRows()
+        for (size_t k = row; k < R.numRows(); ++k) {
+          sum += P(i, k) * R_previous(k, j);
+        }
+        R(i, j) = sum;
+      }
+      for (size_t j = 0; j < Q.numRows(); ++j) {
+        double sum = 0.0;
+        for (size_t k = row; k < Q.numColumns(); ++k) {
+          // P(k, i) = P(i, k)
+          sum += Q_previous(j, k) * P(k, i);
+        }
+        Q(j, i) = sum;
+      }
+    }
+    ++row;
+    ++col;
+    R_previous = R;
+    Q_previous = Q;
+    P = Matrix::identity(matA.numRows());
+  }
+  return std::make_tuple(Q, R);
+}
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
   // assume matA is always a square matrix
