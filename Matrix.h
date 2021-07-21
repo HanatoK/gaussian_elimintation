@@ -85,11 +85,17 @@ private:
   void JacobiSweep();
 };
 
-Matrix getMatrixPLeft(
-  const Matrix& matA, const size_t col, const size_t row);
+// introduce zeros to column "col" of matA under row "row"
+Matrix getHouseholderPLeft(const Matrix& matA, const size_t col, const size_t row);
 
+// introduce zeros to row "row" of matA from column "col"
+Matrix getHouseholderPRight(const Matrix& matA, const size_t col, const size_t row);
+
+tuple<Matrix, Matrix> HouseholderQRNaive(const Matrix& matA);
 tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA);
-tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA);
+
+// bidiagonlization by Householder transformation
+tuple<Matrix, Matrix, Matrix> naiveBidiagonlization(Matrix matA);
 
 // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 template <typename T> int sgn(T val) {

@@ -401,7 +401,7 @@ void realSymmetricEigenSolver::JacobiSweep() {
   }
 }
 
-Matrix getMatrixPLeft(
+Matrix getHouseholderPLeft(
   const Matrix& matA, const size_t col, const size_t row) {
   if (row >= matA.numRows()) {
     const std::string err = "Access row " + std::to_string(row) +
@@ -443,13 +443,53 @@ Matrix getMatrixPLeft(
   return P;
 }
 
-tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
+Matrix getHouseholderPRight(const Matrix& matA, const size_t col, const size_t row) {
+  if (row >= matA.numRows()) {
+    const std::string err = "Access row " + std::to_string(row) +
+       " but matrix has only " + std::to_string(matA.numRows()) +
+       " row(s)!\n";
+    throw std::out_of_range(err.c_str());
+  }
+  if (col >= matA.numColumns()) {
+    const std::string err = "Access column " + std::to_string(col) +
+       " but matrix has only " + std::to_string(matA.numColumns()) +
+       " column(s)!\n";
+    throw std::out_of_range(err.c_str());
+  }
+  Matrix P = Matrix::identity(matA.numColumns());
+  std::vector<double> u(matA.numColumns() - row, 0);
+  double norm2 = 0;
+  for (size_t j = col; j < matA.numColumns(); ++j) {
+    const size_t index_u = j - col;
+    u[index_u] = matA(row, j);
+    norm2 += u[index_u] * u[index_u];
+  }
+  double H = norm2 - u[0] * u[0];
+  const double norm = std::sqrt(norm2);
+  const double sign = sgn(matA(col, row));
+  u[0] = u[0] + sign * norm;
+  H = 0.5 * (H + u[0] * u[0]);
+  for (size_t j = col; j < matA.numColumns(); ++j) {
+    const size_t index_u_j = j - col;
+    for (size_t i = j; i < matA.numColumns(); ++i) {
+      const size_t index_u_i = i - col;
+      P(i, j) = P(i, j) - u[index_u_i] * u[index_u_j] / H;
+      // P.transpose() == P
+      if (j < i) {
+        P(j, i) = P(i, j);
+      }
+    }
+  }
+  return P;
+}
+
+tuple<Matrix, Matrix> HouseholderQRNaive(const Matrix& matA) {
   // naive implementation (need further optimization)
   Matrix R = matA;
   Matrix Q = Matrix::identity(matA.numRows());
   size_t i = 0, j = 0;
   while (i < matA.numRows() && j < matA.numColumns()) {
-    const Matrix P = getMatrixPLeft(
+    const Matrix P = getHouseholderPLeft(
       R, i, j);
     std::cout << "P = \n" << P;
     Q = Q * P;
@@ -462,7 +502,7 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
   return std::make_tuple(Q, R);
 }
 
-tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
+tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
   const size_t M = matA.numRows();
   const size_t N = matA.numColumns();
   Matrix R = matA;
@@ -523,6 +563,28 @@ tuple<Matrix, Matrix> HouseholderQRFast(const Matrix& matA) {
     Q_previous = Q;
   }
   return std::make_tuple(Q, R);
+}
+
+tuple<Matrix, Matrix, Matrix> naiveBidiagonlization(Matrix matA) {
+  const size_t M = matA.numRows();
+  const size_t N = matA.numColumns();
+  Matrix P_left = Matrix::identity(M);
+  Matrix P_right = Matrix::identity(N);
+  size_t col_left = 0, row_left = 0;
+  size_t col_right = 1, row_right = 0;
+  while (col_left < N && row_right < M - 1) {
+    auto tmp = getHouseholderPLeft(matA, col_left, row_left);
+    P_left = P_left * tmp;
+    matA = tmp * matA;
+    tmp = getHouseholderPRight(matA, col_right, row_right);
+    P_right = tmp * P_right;
+    matA = matA * tmp;
+    ++col_left;
+    ++row_left;
+    ++col_right;
+    ++row_right;
+  }
+  return std::make_tuple(P_left, matA, P_right);
 }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
