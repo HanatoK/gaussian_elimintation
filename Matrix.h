@@ -123,4 +123,7 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA);
 // modified Gram-Schmidt process
 tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA);
 
+// treat rows of matrix as points and calculate distances between them
+vector<double> calcDistance(const Matrix& mat);
+
 #endif // MATRIX_H

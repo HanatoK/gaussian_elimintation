@@ -802,3 +802,16 @@ tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
   }
   return std::make_tuple(Q, R);
 }
+
+vector<double> calcDistance(const Matrix& mat) {
+  std::vector<double> distances;
+  for (size_t i = 1; i < mat.numRows(); ++i) {
+    double sum = 0.0;
+    for (size_t j = 0; j < mat.numColumns(); ++j) {
+      const double diff = mat(i, j) - mat(i-1, j);
+      sum += diff * diff;
+    }
+    distances.push_back(std::sqrt(sum));
+  }
+  return distances;
+}

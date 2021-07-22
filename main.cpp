@@ -215,19 +215,6 @@ void testSVDPhaseOne(const Matrix& matA) {
             << std::endl;
 }
 
-vector<double> calcDistance(const Matrix& mat) {
-  std::vector<double> distances;
-  for (size_t i = 1; i < mat.numRows(); ++i) {
-    double sum = 0.0;
-    for (size_t j = 0; j < mat.numColumns(); ++j) {
-      const double diff = mat(i, j) - mat(i-1, j);
-      sum += diff * diff;
-    }
-    distances.push_back(std::sqrt(sum));
-  }
-  return distances;
-}
-
 void testReparametrization() {
   std::cout << "=======testReparametrization starts=======\n";
   std::ifstream ifs("../test_data/path_input.txt");
