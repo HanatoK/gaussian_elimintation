@@ -1,4 +1,4 @@
-*.txt
+old_files/*.txt
 a.out
 build/
 build_debug/

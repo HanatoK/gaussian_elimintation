@@ -1,6 +1,8 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+#include "Helper.h"
+
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -15,6 +17,9 @@ using std::tuple;
 
 class Matrix {
 public:
+  Matrix();
+  Matrix(std::istream& ifs, const std::string& delimeter = " ");
+  Matrix(const vector<vector<double>>& vec);
   Matrix(initializer_list<initializer_list<double>> l);
   Matrix(size_t nrows, size_t ncols);
   double& operator()(size_t i, size_t j);
@@ -37,6 +42,7 @@ public:
   double determinant() const;
   static double rootMeanSquareError(const Matrix& matA, const Matrix& matB);
 private:
+  void fromVector(const vector<vector<double>>& vec);
   size_t m_nrows;
   size_t m_ncols;
   vector<double> m_data;

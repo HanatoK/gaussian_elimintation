@@ -1,7 +1,9 @@
 #include "Matrix.h"
 #include "Spline.h"
+#include "Reparametrization.h"
 
 #include <fmt/format.h>
+#include <fstream>
 
 // TODO: Singular value decomposition
 //       QR decomposition
@@ -213,6 +215,38 @@ void testSVDPhaseOne(const Matrix& matA) {
             << std::endl;
 }
 
+vector<double> calcDistance(const Matrix& mat) {
+  std::vector<double> distances;
+  for (size_t i = 1; i < mat.numRows(); ++i) {
+    double sum = 0.0;
+    for (size_t j = 0; j < mat.numColumns(); ++j) {
+      const double diff = mat(i, j) - mat(i-1, j);
+      sum += diff * diff;
+    }
+    distances.push_back(std::sqrt(sum));
+  }
+  return distances;
+}
+
+void testReparametrization() {
+  std::cout << "=======testReparametrization starts=======\n";
+  std::ifstream ifs("../test_data/path_input.txt");
+  Matrix mat(ifs);
+  std::cout << "Input nodes:\n" << mat;
+  std::vector<double> distances = calcDistance(mat);
+  for (size_t i = 0; i < distances.size(); ++i) {
+    fmt::print("Distance between image {:5d} and {:5d}: {:12.7f}\n", i, i+1, distances[i]);
+  }
+  Reparametrization reparam(mat);
+  Matrix result = reparam.compute();
+  std::cout << "Reparametrization:\n" << result;
+  distances = calcDistance(result);
+  for (size_t i = 0; i < distances.size(); ++i) {
+    fmt::print("Distance between image {:5d} and {:5d}: {:12.7f}\n", i, i+1, distances[i]);
+  }
+  std::cout << "=======testReparametrization ends=======\n";
+}
+
 int main() {
   Matrix matA{{ 2.0,  0.5,  1.0, -2.0,  3.0},
               { 0.5,  1.0,  0.1,  4.0, -9.0},
@@ -244,6 +278,7 @@ int main() {
   // testSplineInterpolation();
   // testHouseholderQR(matA);
   // testHouseholderQR(matB);
-  testSVDPhaseOne(matA);
+  // testSVDPhaseOne(matA);
+  testReparametrization();
   return 0;
 }

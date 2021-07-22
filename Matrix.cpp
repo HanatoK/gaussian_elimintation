@@ -4,6 +4,29 @@
 #include <random>
 #include <fmt/format.h>
 
+Matrix::Matrix(): m_nrows(0), m_ncols(0) {}
+
+Matrix::Matrix(std::istream& ifs, const std::string& delimeter) {
+  std::string line;
+  std::vector<std::string> fields;
+  std::vector<std::vector<double>> vec;
+  while (std::getline(ifs, line)) {
+    fields.clear();
+    splitString(line, delimeter, fields);
+    if (fields.size() > 0) {
+      vec.push_back(std::vector<double>(fields.size()));
+      for (size_t i = 0; i < fields.size(); ++i) {
+        vec.back()[i] = std::stod(fields[i]);
+      }
+    }
+  }
+  fromVector(vec);
+}
+
+Matrix::Matrix(const vector<vector<double>>& vec) {
+  fromVector(vec);
+}
+
 Matrix::Matrix(initializer_list<initializer_list<double>> l) {
   m_nrows = l.size();
   m_ncols = l.begin()->size();
@@ -23,6 +46,21 @@ Matrix::Matrix(size_t nrows, size_t ncols) {
   m_nrows = nrows;
   m_ncols = ncols;
   m_data.assign(m_nrows * m_ncols, 0);
+}
+
+void Matrix::fromVector(const vector<vector<double>>& vec) {
+  m_nrows = vec.size();
+  m_ncols = vec.begin()->size();
+  m_data.resize(m_nrows * m_ncols);
+  size_t index = 0;
+  for (const auto& r: vec) {
+    if (r.size() != m_ncols) {
+      throw std::invalid_argument("Rows have different numbers of elements.");
+    }
+    for (const auto& elem: r) {
+      m_data[index++] = elem;
+    }
+  }
 }
 
 double& Matrix::operator()(size_t i, size_t j) {
