@@ -6,7 +6,7 @@
 
 class Reparametrization {
 public:
-  Reparametrization(const Matrix& matA, int resolution_factor = 50);
+  Reparametrization(const Matrix& matA, int resolution_factor = 1000);
   Matrix compute() const;
 private:
   static double distance(const Matrix& matA, size_t i, size_t j);
