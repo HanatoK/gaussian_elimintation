@@ -9,6 +9,7 @@
 #include <string>
 #include <initializer_list>
 #include <tuple>
+#include <limits>
 
 using std::vector;
 using std::initializer_list;
@@ -18,7 +19,7 @@ using std::tuple;
 class Matrix {
 public:
   Matrix();
-  Matrix(std::istream& ifs, const std::string& delimeter = " ");
+  Matrix(std::istream& ifs, const std::string& delimiter = " ");
   Matrix(const vector<vector<double>>& vec);
   Matrix(initializer_list<initializer_list<double>> l);
   Matrix(size_t nrows, size_t ncols);
@@ -100,8 +101,15 @@ Matrix getHouseholderPRight(const Matrix& matA, const size_t col, const size_t r
 tuple<Matrix, Matrix> HouseholderQRNaive(const Matrix& matA);
 tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA);
 
-// bidiagonlization by Householder transformation
-tuple<Matrix, Matrix, Matrix> naiveBidiagonlization(Matrix matA);
+// bidiagonalization by Householder transformation
+// return P_left, X, P_right where P_left * X * P_right = matA
+// and X is a bidiagonal matrix
+tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA);
+
+// naive SVD (phase 2)
+// assume matA is a real bidiagonal matrix
+// return U, Σ and V
+tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA); 
 
 // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
 template <typename T> int sgn(T val) {

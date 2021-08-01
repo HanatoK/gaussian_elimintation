@@ -6,13 +6,13 @@
 
 Matrix::Matrix(): m_nrows(0), m_ncols(0) {}
 
-Matrix::Matrix(std::istream& ifs, const std::string& delimeter) {
+Matrix::Matrix(std::istream& ifs, const std::string& delimiter) {
   std::string line;
   std::vector<std::string> fields;
   std::vector<std::vector<double>> vec;
   while (std::getline(ifs, line)) {
     fields.clear();
-    splitString(line, delimeter, fields);
+    splitString(line, delimiter, fields);
     if (fields.size() > 0) {
       vec.push_back(std::vector<double>(fields.size()));
       for (size_t i = 0; i < fields.size(); ++i) {
@@ -373,11 +373,15 @@ tuple<Matrix, Matrix> realSymmetricEigenSolver::solve() {
 
 void realSymmetricEigenSolver::calc_c_s(
   double a_pq, double a_pp, double a_qq, double& c, double& s) {
-  const double theta = 0.5 * (a_qq - a_pp) / a_pq;
-  const double sign = sgn(theta);
-  const double t = sign / (std::abs(theta) + std::sqrt(theta * theta + 1.0));
-  c = 1.0 / std::sqrt(t * t + 1.0);
-  s = t * c;
+  if (std::abs(a_qq - a_pp) < std::numeric_limits<double>::epsilon()) {
+    c = s = std::sqrt(0.5);
+  } else {
+    const double theta = 0.5 * (a_qq - a_pp) / a_pq;
+    const double sign = sgn(theta);
+    const double t = sign / (std::abs(theta) + std::sqrt(theta * theta + 1.0));
+    c = 1.0 / std::sqrt(t * t + 1.0);
+    s = t * c;
+  }
 }
 
 void realSymmetricEigenSolver::applyJacobiTransformation(
@@ -430,11 +434,13 @@ void realSymmetricEigenSolver::JacobiSweep() {
       const double a_pq = m_matA(i, j);
       const double a_pp = m_matA(i, i);
       const double a_qq = m_matA(j, j);
-      if (std::abs(a_pq) > 0) {
+      if (std::abs(a_pq) > std::numeric_limits<double>::epsilon()) {
         realSymmetricEigenSolver::calc_c_s(a_pq, a_pp, a_qq, c, s);
         applyJacobiTransformation(c, s, i, j);
         multiplyJacobi(c, s, i, j);
+        // fmt::print("i = {:2d} ; j = {:2d} ; a_pq = {:12.7f} ; c = {:12.7f} ; s = {:12.7f}\n", i, j, a_pq, c, s);
       }
+      // std::cout << "Matrix A:\n" << m_matA;
     }
   }
 }
@@ -603,7 +609,7 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
   return std::make_tuple(Q, R);
 }
 
-tuple<Matrix, Matrix, Matrix> naiveBidiagonlization(Matrix matA) {
+tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA) {
   const size_t M = matA.numRows();
   const size_t N = matA.numColumns();
   Matrix P_left = Matrix::identity(M);
@@ -623,6 +629,40 @@ tuple<Matrix, Matrix, Matrix> naiveBidiagonlization(Matrix matA) {
     ++row_right;
   }
   return std::make_tuple(P_left, matA, P_right);
+}
+
+tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
+  const size_t K = matA.numRows() < matA.numColumns() ?
+                   matA.numRows() : matA.numColumns();
+  Matrix matH(K * 2, K * 2);
+  for (size_t i = 0; i < K; ++i) {
+    for (size_t j = K; j < K * 2; ++j) {
+      matH(i, j) = matA(j - K, i);
+      matH(j, i) = matH(i, j);
+    }
+  }
+  std::cout << "Matrix H:\n" << matH;
+  realSymmetricEigenSolver solver(matH);
+  tuple<Matrix, Matrix> eigen = solver.solve();
+  const Matrix& Lambda = std::get<0>(eigen);
+  const Matrix& Q = std::get<1>(eigen);
+  std::cout << "Matrix Q:\n" << Q;
+  // const Matrix tmp = Q * Lambda * Q.transpose();
+  // std::cout << "Q*Λ*Q'\n" << tmp;
+  // std::cout << "RMSE = " << Matrix::rootMeanSquareError(tmp, matH) << std::endl;
+  // I get H = Q*Λ*Q' but H*Q = Q*Λ is required
+  // FIXME: what should I do? multiplying sqrt(2.0)?
+  Matrix matU(matA.numRows(), matA.numRows());
+  Matrix matV(matA.numColumns(), matA.numColumns());
+  Matrix matSigma(K, K);
+  for (size_t i = 0; i < K; ++i) {
+    for (size_t j = 0; j < K; ++j) {
+      matV(i, j) = std::sqrt(2.0) * Q(i, j);
+      matU(i, j) = std::sqrt(2.0) * Q(i + K, j);
+      if (i == j) matSigma(i, j) = Lambda(i, j);
+    }
+  }
+  return std::make_tuple(matU, matSigma, matV.transpose());
 }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
