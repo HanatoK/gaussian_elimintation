@@ -373,15 +373,11 @@ tuple<Matrix, Matrix> realSymmetricEigenSolver::solve() {
 
 void realSymmetricEigenSolver::calc_c_s(
   double a_pq, double a_pp, double a_qq, double& c, double& s) {
-  if (std::abs(a_qq - a_pp) < std::numeric_limits<double>::epsilon()) {
-    c = s = std::sqrt(0.5);
-  } else {
-    const double theta = 0.5 * (a_qq - a_pp) / a_pq;
-    const double sign = sgn(theta);
-    const double t = sign / (std::abs(theta) + std::sqrt(theta * theta + 1.0));
-    c = 1.0 / std::sqrt(t * t + 1.0);
-    s = t * c;
-  }
+  const double theta = 0.5 * (a_qq - a_pp) / a_pq;
+  const double sign = sgn(theta) == 0 ? 1.0 : sgn(theta);
+  const double t = sign / (std::abs(theta) + std::sqrt(theta * theta + 1.0));
+  c = 1.0 / std::sqrt(t * t + 1.0);
+  s = t * c;
 }
 
 void realSymmetricEigenSolver::applyJacobiTransformation(

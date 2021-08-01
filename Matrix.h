@@ -112,6 +112,7 @@ tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA);
 tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA); 
 
 // https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+// this can be zero!!
 template <typename T> int sgn(T val) {
   return (T(0) < val) - (val < T(0));
 }
