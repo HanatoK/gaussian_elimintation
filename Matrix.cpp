@@ -606,23 +606,21 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
 }
 
 tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA) {
+  const size_t K = matA.numRows() < matA.numColumns() ?
+                   matA.numRows() : matA.numColumns();
   const size_t M = matA.numRows();
   const size_t N = matA.numColumns();
   Matrix P_left = Matrix::identity(M);
   Matrix P_right = Matrix::identity(N);
-  size_t col_left = 0, row_left = 0;
-  size_t col_right = 1, row_right = 0;
-  while (col_left < N && row_right < M - 1) {
-    auto tmp = getHouseholderPLeft(matA, col_left, row_left);
+  for (size_t k = 0; k < K; ++k) {
+    auto tmp = getHouseholderPLeft(matA, k, k);
     P_left = P_left * tmp;
     matA = tmp * matA;
-    tmp = getHouseholderPRight(matA, col_right, row_right);
-    P_right = tmp * P_right;
-    matA = matA * tmp;
-    ++col_left;
-    ++row_left;
-    ++col_right;
-    ++row_right;
+    if (k + 1 < K) {
+      tmp = getHouseholderPRight(matA, k + 1, k);
+      P_right = tmp * P_right;
+      matA = matA * tmp;
+    }
   }
   return std::make_tuple(P_left, matA, P_right);
 }
@@ -650,7 +648,7 @@ tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
   // FIXME: what should I do? multiplying sqrt(2.0)?
   Matrix matU(matA.numRows(), matA.numRows());
   Matrix matV(matA.numColumns(), matA.numColumns());
-  Matrix matSigma(K, K);
+  Matrix matSigma(matA.numRows(), matA.numColumns());
   for (size_t i = 0; i < K; ++i) {
     for (size_t j = 0; j < K; ++j) {
       matV(i, j) = std::sqrt(2.0) * Q(i, j);
