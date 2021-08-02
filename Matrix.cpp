@@ -606,10 +606,9 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
 }
 
 tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA) {
-  const size_t K = matA.numRows() < matA.numColumns() ?
-                   matA.numRows() : matA.numColumns();
   const size_t M = matA.numRows();
   const size_t N = matA.numColumns();
+  const size_t K = std::min(M, N);
   Matrix P_left = Matrix::identity(M);
   Matrix P_right = Matrix::identity(N);
   for (size_t k = 0; k < K; ++k) {
@@ -626,8 +625,9 @@ tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA) {
 }
 
 tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
-  const size_t K = matA.numRows() < matA.numColumns() ?
-                   matA.numRows() : matA.numColumns();
+  const size_t M = matA.numRows();
+  const size_t N = matA.numColumns();
+  const size_t K = std::min(M, N);
   Matrix matH(K * 2, K * 2);
   for (size_t i = 0; i < K; ++i) {
     for (size_t j = K; j < K * 2; ++j) {
@@ -646,17 +646,17 @@ tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
   // std::cout << "RMSE = " << Matrix::rootMeanSquareError(tmp, matH) << std::endl;
   // I get H = Q*Λ*Q' but H*Q = Q*Λ is required
   // FIXME: what should I do? multiplying sqrt(2.0)?
-  Matrix matU(matA.numRows(), matA.numRows());
-  Matrix matV(matA.numColumns(), matA.numColumns());
-  Matrix matSigma(matA.numRows(), matA.numColumns());
+  Matrix matU(M, M);
+  Matrix matV(N, N);
+  Matrix matSigma(M, N);
   for (size_t i = 0; i < K; ++i) {
     for (size_t j = 0; j < K; ++j) {
-      matV(i, j) = std::sqrt(2.0) * Q(i, j);
+      matV(j, i) = std::sqrt(2.0) * Q(i, j);
       matU(i, j) = std::sqrt(2.0) * Q(i + K, j);
       if (i == j) matSigma(i, j) = Lambda(i, j);
     }
   }
-  return std::make_tuple(matU, matSigma, matV.transpose());
+  return std::make_tuple(matU, matSigma, matV);
 }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
