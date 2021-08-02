@@ -467,7 +467,7 @@ Matrix getHouseholderPLeft(
   double H = norm2 - u[0] * u[0];
   const double norm = std::sqrt(norm2);
   const double sign = sgn(matA(col, row));
-  u[0] = u[0] + sign * norm;
+  u[0] = u[0] + (sign == 0 ? 1.0 : double(sign)) * norm;
   H = 0.5 * (H + u[0] * u[0]);
   for (size_t i = row; i < matA.numRows(); ++i) {
     const size_t index_u_i = i - row;
@@ -497,7 +497,7 @@ Matrix getHouseholderPRight(const Matrix& matA, const size_t col, const size_t r
     throw std::out_of_range(err.c_str());
   }
   Matrix P = Matrix::identity(matA.numColumns());
-  std::vector<double> u(matA.numColumns() - row, 0);
+  std::vector<double> u(matA.numColumns() - col, 0);
   double norm2 = 0;
   for (size_t j = col; j < matA.numColumns(); ++j) {
     const size_t index_u = j - col;
@@ -506,8 +506,8 @@ Matrix getHouseholderPRight(const Matrix& matA, const size_t col, const size_t r
   }
   double H = norm2 - u[0] * u[0];
   const double norm = std::sqrt(norm2);
-  const double sign = sgn(matA(col, row));
-  u[0] = u[0] + sign * norm;
+  const int sign = sgn(matA(col, row));
+  u[0] = u[0] + (sign == 0 ? 1.0 : double(sign)) * norm;
   H = 0.5 * (H + u[0] * u[0]);
   for (size_t j = col; j < matA.numColumns(); ++j) {
     const size_t index_u_j = j - col;
@@ -567,7 +567,7 @@ tuple<Matrix, Matrix> HouseholderQR(const Matrix& matA) {
     }
     H = norm2 - u[0] * u[0];
     norm = std::sqrt(norm2);
-    u[0] += sgn(R(col, row)) * norm;
+    u[0] += (sgn(R(col, row)) == 0 ? 1.0 : sgn(R(col, row))) * norm;
     H = 0.5 * (H + u[0] * u[0]);
     // P and Q are square matrices
     for (size_t i = row; i < M; ++i) {

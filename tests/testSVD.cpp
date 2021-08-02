@@ -48,9 +48,19 @@ void testSVDPhaseTwo(const Matrix& matA) {
 }
 
 int main() {
-  std::cout << "SVD phase 1: bidiagonalization\n";
-  const auto R = testSVDPhaseOne(TEST::matA);
-  std::cout << "SVD phase 2: eigendecomposition\n";
-  testSVDPhaseTwo(R);
+  {
+    std::cout << "Matrix D:\n" << TEST::matD;
+    std::cout << "SVD phase 1: bidiagonalization\n";
+    const auto R = testSVDPhaseOne(TEST::matD);
+    std::cout << "SVD phase 2: eigendecomposition\n";
+    testSVDPhaseTwo(R);
+  }
+  {
+    std::cout << "Matrix A:\n" << TEST::matA;
+    std::cout << "SVD phase 1: bidiagonalization\n";
+    const auto R = testSVDPhaseOne(TEST::matA);
+    std::cout << "SVD phase 2: eigendecomposition\n";
+    testSVDPhaseTwo(R);
+  }
   return 0;
 }
