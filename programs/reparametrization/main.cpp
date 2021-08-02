@@ -13,15 +13,25 @@ bool reparametrization(
     std::cerr << "Cannot open input file " + input_filename + "\n";
     return false;
   }
-  Matrix mat(ifs);
-  std::vector<double> old_distances = calcDistance(mat);
-  Reparametrization reparam(mat);
-  Matrix result = reparam.compute();
-  std::vector<double> new_distances = calcDistance(result);
+  const Matrix mat(ifs);
+  const std::vector<double> old_distances = calcDistance(mat);
+  const Reparametrization reparam(mat);
+  const Matrix result = reparam.compute();
+  const std::vector<double> new_distances = calcDistance(result);
+  for (size_t i = 0; i < mat.numRows(); ++i) {
+    double d = 0;
+    for (size_t j = 0; j < mat.numColumns(); ++j) {
+      const double x = mat(i, j) - result(i, j);
+      d += x * x;
+    }
+    d = std::sqrt(d);
+    fmt::print("Drift of image {:5d}: {:12.7f}\n", i, d);
+  }
   for (size_t i = 0; i < new_distances.size(); ++i) {
     fmt::print("Distance between image {:5d} and {:5d}: {:12.7f} (origin) {:12.7f} (reparam)\n",
                i, i+1, old_distances[i], new_distances[i]);
   }
+
   std::ofstream ofs(output_filename.c_str());
   if (!ofs.is_open()) {
     std::cerr << "Cannot open output file " + output_filename + "\n";
