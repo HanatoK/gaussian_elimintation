@@ -434,9 +434,7 @@ void realSymmetricEigenSolver::JacobiSweep() {
         realSymmetricEigenSolver::calc_c_s(a_pq, a_pp, a_qq, c, s);
         applyJacobiTransformation(c, s, i, j);
         multiplyJacobi(c, s, i, j);
-        // fmt::print("i = {:2d} ; j = {:2d} ; a_pq = {:12.7f} ; c = {:12.7f} ; s = {:12.7f}\n", i, j, a_pq, c, s);
       }
-      // std::cout << "Matrix A:\n" << m_matA;
     }
   }
 }
