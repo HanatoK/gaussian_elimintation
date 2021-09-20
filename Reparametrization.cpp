@@ -1,9 +1,11 @@
 #include "Reparametrization.h"
 
 Reparametrization::Reparametrization
-  (const Matrix& matA, int resolution_factor): m_input(matA) {
-  m_resolution = matA.numRows() * resolution_factor;
-}
+  (const Matrix& matA, size_t resolution_factor):
+  m_input(matA), m_num_images(matA.numRows()), m_resolution(m_num_images * resolution_factor) {}
+
+Reparametrization::Reparametrization(const Matrix& matA, size_t num_images, size_t resolution_factor):
+  m_input(matA), m_num_images(num_images), m_resolution(m_num_images * resolution_factor) {}
 
 Matrix Reparametrization::interpolate() const {
   Matrix m_interp(m_resolution, m_input.numColumns());
@@ -41,7 +43,12 @@ double Reparametrization::distance(const Matrix& matA, size_t i, size_t j) {
 
 Matrix Reparametrization::compute() const {
   Matrix interpolate_matrix = interpolate();
-  Matrix result = m_input;
+  Matrix result(m_num_images, m_input.numColumns());
+  // copy the first and the last image
+  for (size_t j = 0; j < m_input.numColumns(); ++j) {
+    result(0, j) = m_input(0, j);
+    result(result.numRows() - 1, j) = m_input(m_input.numRows() - 1, j);
+  }
   std::vector<double> L(m_resolution);
   L[0] = 0;
   for (size_t i = 1; i < m_resolution; ++i) {
@@ -51,8 +58,8 @@ Matrix Reparametrization::compute() const {
   }
   const double total_L = L.back();
   size_t k_lower = 0;
-  for (size_t i = 1; i < m_input.numRows() - 1; ++i) {
-    const double l = total_L * double(i) / (m_input.numRows() - 1);
+  for (size_t i = 1; i < m_num_images - 1; ++i) {
+    const double l = total_L * double(i) / (m_num_images - 1);
     // find an index k of array L, where L[k] < l and L[k+1] > l
     // actually L is monotonically increasing so we do not need
     // a full bracketing
