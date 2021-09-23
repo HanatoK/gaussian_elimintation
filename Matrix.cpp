@@ -683,7 +683,7 @@ Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
           pivot_indices[j] = k;
           firsttime = false;
         } else {
-          if (abs(matA(k, j)) > abs(pivot)) {
+          if (std::abs(matA(k, j)) > std::abs(pivot)) {
             pivot = matA(k, j);
             pivot_indices[j] = k;
           }
