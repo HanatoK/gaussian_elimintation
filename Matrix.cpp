@@ -774,29 +774,27 @@ tuple<Matrix, Matrix> GramSchmidtProcess(const Matrix& matA) {
   }
   Matrix Q(matA.numRows(), matA.numColumns());
   Matrix R(matA.numRows(), matA.numColumns());
+  // iterate over the remaining columns
   for (size_t j = 0; j < matA.numColumns(); ++j) {
-    for (size_t i = 0; i < matA.numRows(); ++i) {
-      Q(i, j) = matA(i, j);
-    }
-    // sum of projection
     for (size_t k = 0; k < j; ++k) {
-      double numerator = 0;
-      double denominator = 0;
-      // maybe I need to do column pivoting here?
+      // compute R(k, j)
+      // R(k, j) = matA(:, j) * Q(:, k);
       for (size_t i = 0; i < matA.numRows(); ++i) {
-        numerator += matA(i, j) * Q(i, k);
-        denominator += Q(i, k) * Q(i, k);
+        R(k, j) += matA(i, j) * Q(i, k);
       }
-      R(k, j) = numerator / denominator;
+      // use the column j of Q as temporary storage for summation
+      // Q(:, j) += R(k, j) * matA(:, k);
       for (size_t i = 0; i < matA.numRows(); ++i) {
-        Q(i, j) -= Q(i, k) * R(k, j);
+        Q(i, j) += R(k, j) * Q(i, k);
       }
     }
-    // normalization
+    // compute R(j, j)
     for (size_t i = 0; i < matA.numRows(); ++i) {
+      Q(i, j) = matA(i, j) - Q(i, j);
       R(j, j) += Q(i, j) * Q(i, j);
     }
     R(j, j) = std::sqrt(R(j, j));
+    // normalize Q(:, j)
     for (size_t i = 0; i < matA.numRows(); ++i) {
       Q(i, j) = Q(i, j) / R(j, j);
     }
