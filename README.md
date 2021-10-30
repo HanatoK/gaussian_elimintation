@@ -15,8 +15,8 @@
 
 ## TODO
 
-- [] Optimization of the Jacobi sweep
-- [] Optimization of the computation of determinant
-- [] Optimization of the bidiagonalization
-- [] Optimization of the Householder reflection
-- [] Conjugate gradient method
+- [ ] Optimization of the Jacobi sweep
+- [ ] Optimization of the computation of determinant
+- [ ] Optimization of the bidiagonalization
+- [ ] Optimization of the Householder reflection
+- [ ] Conjugate gradient method
