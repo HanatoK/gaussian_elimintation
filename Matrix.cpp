@@ -362,7 +362,7 @@ tuple<Matrix, Matrix> realSymmetricEigenSolver::solve() {
     JacobiSweep();
     off_diag_sum = std::sqrt(m_matA.diagonalSquaredSum() / num_diagonal_elements);
     ++iteration;
-    std::cout << fmt::format("Sweep {:02d}: off-diagonal squared sum = {:8.4f}\n", iteration, off_diag_sum);
+    // std::cout << fmt::format("Sweep {:02d}: off-diagonal squared sum = {:8.4f}\n", iteration, off_diag_sum);
     if (iteration >= max_iteration) {
       std::cerr << "Maximum iterations reached in Eigen solver!\n";
       break;
@@ -625,7 +625,12 @@ tuple<Matrix, Matrix, Matrix> naiveBidiagonalization(Matrix matA) {
 tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
   const size_t M = matA.numRows();
   const size_t N = matA.numColumns();
-  const size_t K = std::min(M, N);
+  const size_t K = N;
+  // assume M >= N
+  if (M < N) {
+    const std::string err = "SVDPhaseTwo only supports matrices that have more rows than columns!\n";
+    throw std::runtime_error(err.c_str());
+  }
   Matrix matH(K * 2, K * 2);
   for (size_t i = 0; i < K; ++i) {
     for (size_t j = K; j < K * 2; ++j) {
@@ -633,18 +638,18 @@ tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
       matH(j, i) = matH(i, j);
     }
   }
-  std::cout << "Matrix H:\n" << matH;
+  // std::cout << "Matrix H:\n" << matH;
   realSymmetricEigenSolver solver(matH);
   tuple<Matrix, Matrix> eigen = solver.solve();
   const Matrix& Lambda = std::get<0>(eigen);
   const Matrix& Q = std::get<1>(eigen);
-  std::cout << "Matrix Q:\n" << Q;
+  // std::cout << "Matrix Q:\n" << Q;
   // const Matrix tmp = Q * Lambda * Q.transpose();
   // std::cout << "Q*Λ*Q'\n" << tmp;
   // std::cout << "RMSE = " << Matrix::rootMeanSquareError(tmp, matH) << std::endl;
   // I get H = Q*Λ*Q' but H*Q = Q*Λ is required
   // FIXME: what should I do? multiplying sqrt(2.0)?
-  Matrix matU(M, M);
+  Matrix matU = Matrix::identity(M);
   Matrix matV(N, N);
   Matrix matSigma(M, N);
   for (size_t i = 0; i < K; ++i) {
@@ -655,6 +660,26 @@ tuple<Matrix, Matrix, Matrix> SVDPhaseTwo(const Matrix& matA) {
     }
   }
   return std::make_tuple(matU, matSigma, matV);
+}
+
+tuple<Matrix, Matrix, Matrix> SVD(const Matrix& matA) {
+  // phase 1: bidiagonlization
+  // TODO: figure out how to bidiagonlize a matrix that has
+  //       more columns than rows
+  // TODO: use a more efficient bidiagonlization implementation
+  const auto stage1 = matA.numColumns() > matA.numRows() ?
+                      naiveBidiagonalization(matA.transpose()) :
+                      naiveBidiagonalization(matA);
+  const auto P_left = std::get<0>(stage1);
+  const auto R = std::get<1>(stage1);
+  const auto P_right = std::get<2>(stage1);
+  const auto stage2 = SVDPhaseTwo(R);
+  const auto U = P_left * std::get<0>(stage2);
+  const auto V = std::get<2>(stage2) * P_right;
+  return matA.numColumns() > matA.numRows() ?
+         std::make_tuple(V.transpose(), std::get<1>(stage2).transpose(),
+                         U.transpose()):
+         std::make_tuple(U, std::get<1>(stage2), V);
 }
 
 Matrix GaussianElimination(Matrix& matA, Matrix& matB) {
