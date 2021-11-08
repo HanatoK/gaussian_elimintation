@@ -15,6 +15,7 @@
 
 ## TODO
 
+- [ ] Moore–Penrose inverse
 - [ ] Optimization of the Jacobi sweep
 - [ ] Optimization of the computation of determinant
 - [ ] Optimization of the bidiagonalization

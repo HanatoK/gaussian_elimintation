@@ -831,25 +831,22 @@ tuple<Matrix, Matrix> ModifiedGramSchmidtProcess(const Matrix& matA) {
   Matrix Q(matA);
   Matrix R(matA.numColumns(), matA.numColumns());
   for (size_t j = 0; j < Q.numColumns(); ++j) {
-    // normalization
+    // compute the normalization factor
     for (size_t i = 0; i < Q.numRows(); ++i) {
       R(j, j) += Q(i, j) * Q(i, j);
     }
     R(j, j) = std::sqrt(R(j, j));
-    double denominator = 0;
+    // normalize
     for (size_t i = 0; i < Q.numRows(); ++i) {
       Q(i, j) = Q(i, j) / R(j, j);
-      denominator += Q(i, j) * Q(i, j);
     }
-    // project all following vectors to j, and subtract the projection
+    // make all forthcoming vectors orthogonal to j
     for (size_t k = j + 1; k < Q.numColumns(); ++k) {
-      double numerator = 0;
-      // calculate the projection
+      // calculate the factors
       for (size_t i = 0; i < Q.numRows(); ++i) {
-        numerator += Q(i, j) * Q(i, k);
+        R(j, k) += Q(i, j) * Q(i, k);
       }
-      R(j, k) = numerator / denominator;
-      // subtract all following vectors
+      // subtract the vectors
       for (size_t i = 0; i < Q.numRows(); ++i) {
         Q(i, k) -= Q(i, j) * R(j, k);
       }

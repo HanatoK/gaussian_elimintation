@@ -18,6 +18,10 @@ void testGramSchmidt() {
   std::cout << "Matrix R:\n" << std::get<1>(qr);
   std::cout << "Q*R:\n" << std::get<0>(qr)*std::get<1>(qr);
   std::cout << "Check orthogonality:\n" << std::get<0>(qr).transpose()*std::get<0>(qr);
+  std::cout << "RMSE = "
+            << Matrix::rootMeanSquareError(
+                std::get<0>(qr)*std::get<1>(qr), matA)
+            << std::endl;
 }
 
 void testModifiedGramSchmidt() {
@@ -32,6 +36,10 @@ void testModifiedGramSchmidt() {
   std::cout << "Matrix R:\n" << std::get<1>(qr);
   std::cout << "Q*R:\n" << std::get<0>(qr)*std::get<1>(qr);
   std::cout << "Check orthogonality:\n" << std::get<0>(qr).transpose()*std::get<0>(qr);
+  std::cout << "RMSE = "
+            << Matrix::rootMeanSquareError(
+                std::get<0>(qr)*std::get<1>(qr), matA)
+            << std::endl;
 }
 
 void testModifiedGramSchmidtRectangular() {
@@ -46,6 +54,10 @@ void testModifiedGramSchmidtRectangular() {
   std::cout << "Matrix R:\n" << std::get<1>(qr);
   std::cout << "Q*R:\n" << std::get<0>(qr)*std::get<1>(qr);
   std::cout << "Check orthogonality:\n" << std::get<0>(qr).transpose()*std::get<0>(qr);
+  std::cout << "RMSE = "
+            << Matrix::rootMeanSquareError(
+                std::get<0>(qr)*std::get<1>(qr), matA)
+            << std::endl;
 }
 
 int main() {
