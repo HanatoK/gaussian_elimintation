@@ -26,6 +26,8 @@ src_testReparametrization = src_base + ['tests/testReparametrization.cpp']
 executable('testReparametrization', src_testReparametrization, cpp_args : ['-std=c++17'], dependencies: [fmt_dep])
 src_testSVD = src_base + ['tests/testSVD.cpp']
 executable('testSVD', src_testSVD, cpp_args : ['-std=c++17'], dependencies: [fmt_dep])
+src_testQREigen = src_base + ['tests/testQREigen.cpp']
+executable('testQREigen', src_testQREigen, cpp_args : ['-std=c++17'], dependencies: [fmt_dep])
 
 # programs
 src_reparam = src_base + ['programs/reparametrization/main.cpp']
