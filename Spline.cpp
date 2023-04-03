@@ -2,6 +2,10 @@
 
 #include <fmt/format.h>
 
+#ifdef USE_EIGEN3
+#include <Eigen/Sparse>
+#endif
+
 InterpolateBase::InterpolateBase(const std::vector<double>& X,
                                  const std::vector<double>& Y,
                                  const size_t M, const bool equidistant):
@@ -69,8 +73,14 @@ SplineInterpolate::SplineInterpolate(
 void SplineInterpolate::calcFactors() {
   // solve the equations:
   // \Delta X_i C_i + 2(\Delta X_{i+1} + \Delta X_{i})C_{i+1}+\Delta X_{i+1} C_{i+2} = 3(\Delta Y_{i+1} - \Delta Y_{i})
+#ifdef USE_EIGEN3
+  using index_type = int;
+  const index_type N = m_X.size() - 1;
+#else
+  using index_type = size_t;
   const size_t num_points = m_X.size();
   const size_t N = num_points - 1;
+#endif
   using std::vector;
   vector<double> dY(N);
   vector<double> dX(N);
@@ -78,19 +88,39 @@ void SplineInterpolate::calcFactors() {
   m_B.resize(N);
   m_C.resize(N);
   m_D.resize(N);
-  for (size_t i = 0; i < N; ++i) {
+  for (index_type i = 0; i < N; ++i) {
     dX[i] = m_X[i+1] - m_X[i];
     dY[i] = m_Y[i+1] - m_Y[i];
   }
+#ifdef USE_EIGEN3
+  using Matrix = Eigen::SparseMatrix<double>;
+  vector<Eigen::Triplet<double>> triplets;
+  Matrix tmp_mat(N+1, N+1);
+  Eigen::VectorXd tmp_vec(N+1);
+#else
   Matrix tmp_mat(N+1, N+1);
   Matrix tmp_vec(N+1, 1);
-  for (size_t i = 1; i < N; ++i) {
+#endif
+  for (index_type i = 1; i < N; ++i) {
+#ifdef USE_EIGEN3
+    triplets.push_back(Eigen::Triplet<double>{i, i-1, dX[i-1]});
+    triplets.push_back(Eigen::Triplet<double>{i, i, 2.0 * (dX[i-1] + dX[i])});
+    triplets.push_back(Eigen::Triplet<double>{i, i+1, dX[i]});
+    tmp_vec[i] = 3.0 * (dY[i] / dX[i] - dY[i-1] / dX[i-1]);
+#else
     tmp_mat(i, i-1) = dX[i-1];
     tmp_mat(i, i) = 2.0 * (dX[i-1] + dX[i]);
     tmp_mat(i, i+1) = dX[i];
     tmp_vec(i, 0) = 3.0 * (dY[i] / dX[i] - dY[i-1] / dX[i-1]);
+#endif
   }
   if (m_bc == boundary_condition::natural) {
+#ifdef USE_EIGEN3
+    triplets.push_back(Eigen::Triplet<double>{0, 0, 1.0});
+    triplets.push_back(Eigen::Triplet<double>{N, N, 1.0});
+    tmp_vec[0] = 0.0;
+    tmp_vec[N] = 0.0;
+#else
     // std::cout << "Using natural boundary";
     // natural boundary:
     // S_{0}'' (X_0) = 0
@@ -100,7 +130,18 @@ void SplineInterpolate::calcFactors() {
     // then S_{N}'' (X_N) = 0
     tmp_mat(N, N) = 1.0;
     tmp_vec(N, 0) = 0.0;
+#endif
   } else if (m_bc == boundary_condition::not_a_knot) {
+#ifdef USE_EIGEN3
+    triplets.push_back(Eigen::Triplet<double>{0, 0, -dX[1]});
+    triplets.push_back(Eigen::Triplet<double>{0, 1, dX[0] + dX[1]});
+    triplets.push_back(Eigen::Triplet<double>{0, 2, -dX[0]});
+    tmp_vec[0] = 0.0;
+    triplets.push_back(Eigen::Triplet<double>{N, N-2, -dX[N-2]});
+    triplets.push_back(Eigen::Triplet<double>{N, N-1, dX[N-2] + dX[N-1]});
+    triplets.push_back(Eigen::Triplet<double>{N, N, -dX[N-1]});
+    tmp_vec[N] = 0.0;
+#else
     // std::cout << "Using not-a-knot boundary";
     // S_{0}''' (X_1) = S_{1}''' (X_1)
     tmp_mat(0, 0) = -dX[1];
@@ -111,15 +152,29 @@ void SplineInterpolate::calcFactors() {
     tmp_mat(N, N-1) = dX[N-2] + dX[N-1];
     tmp_mat(N, N) = -dX[N-1];
     tmp_vec(N, N) = 0.0;
+#endif
   }
-  // std::cout << "Interpolation matrix:\n" << tmp_mat;
-  // std::cout << "Interpolation vector:\n" << tmp_vec;
+#ifdef USE_EIGEN3
+  tmp_mat.setFromTriplets(triplets.begin(), triplets.end());
+  Eigen::SparseLU<Matrix>  solver;
+  solver.analyzePattern(tmp_mat);
+  solver.factorize(tmp_mat);
+  const Eigen::VectorXd tmp_C = solver.solve(tmp_vec);
+#else
   const Matrix tmp_C = GaussianElimination(tmp_mat, tmp_vec);
-  for (size_t i = 0; i < N; ++i) {
+#endif
+  for (index_type i = 0; i < N; ++i) {
+#ifdef USE_EIGEN3
+    m_C[i] = tmp_C[i];
+    m_D[i] = (tmp_C[i+1] - tmp_C[i]) / (3.0 * dX[i]);
+    m_B[i] = dY[i] / dX[i] - dX[i] * (2.0 * tmp_C[i] + tmp_C[i+1]) / 3.0;
+    m_A[i] = m_Y[i];
+#else
     m_C[i] = tmp_C(i, 0);
     m_D[i] = (tmp_C(i+1, 0) - tmp_C(i, 0)) / (3.0 * dX[i]);
     m_B[i] = dY[i] / dX[i] - dX[i] * (2.0 * tmp_C(i, 0) + tmp_C(i+1, 0)) / 3.0;
     m_A[i] = m_Y[i];
+#endif
   }
 }
 
