@@ -167,9 +167,13 @@ Matrix Matrix::operator*(const Matrix& rhs) const {
   const size_t new_cols = rhs.numColumns();
   Matrix result(new_rows, new_cols);
   for (size_t i = 0; i < new_rows; ++i) {
-    for (size_t j = 0; j < new_cols; ++j) {
-      for (size_t k = 0; k < this->numColumns(); ++k) {
-        result(i, j) += (*this)(i, k) * rhs(k,j);
+    for (size_t k = 0; k < this->numColumns(); ++k) {
+      const size_t this_index = i * this->numColumns() + k;
+      const size_t result_index_row = i * new_cols;
+      const size_t rhs_index_row = k * rhs.numColumns();
+      for (size_t j = 0; j < new_cols; ++j) {
+        // result(i, j) += (*this)(i, k) * rhs(k,j);
+        result.m_data[result_index_row + j] += m_data[this_index] * rhs.m_data[rhs_index_row + j];
       }
     }
   }
